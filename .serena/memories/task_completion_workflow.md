@@ -28,7 +28,7 @@ bun test
 bun test --coverage
 
 # Run specific test file
-bun test tests/downloader.test.ts
+bun test tests/daVinciDownloader.test.ts
 
 # Run with verbose output
 bun test --verbose

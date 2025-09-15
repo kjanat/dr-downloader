@@ -36,8 +36,8 @@ This tool downloads the DaVinci Resolve zip file from the official Blackmagic De
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/dr-downloader.git
-cd dr-downloader
+git clone https://github.com/yourusername/dr-daVinciDownloader.git
+cd dr-daVinciDownloader
 
 # Install dependencies
 bun install
@@ -49,7 +49,7 @@ bun run start
 ### Quick Setup
 
 ```bash
-cd /home/kjanat/projects/dr-downloader
+cd /home/kjanat/projects/dr-daVinciDownloader
 bun install
 ```
 
@@ -128,7 +128,7 @@ The tool automatically:
 
 ```bash
 # Step 1: Download the file
-cd /path/to/dr-downloader
+cd /path/to/dr-daVinciDownloader
 bun run start
 
 # Step 2: Install via AUR (file will be found automatically)
@@ -142,8 +142,8 @@ Create a wrapper script `install-davinci.sh`:
 ```bash
 #!/bin/bash
 
-# Navigate to dr-downloader directory
-cd /path/to/dr-downloader
+# Navigate to dr-daVinciDownloader directory
+cd /path/to/dr-daVinciDownloader
 
 # Download DaVinci Resolve
 echo "Downloading DaVinci Resolve..."
@@ -206,7 +206,7 @@ The tool auto-detects cache directories for:
 3. Manually specify the AUR cache directory:
 
    ```bash
-   ./dr-downloader -aur-cache ~/.cache/yay/davinci-resolve
+   ./dr-daVinciDownloader -aur-cache ~/.cache/yay/davinci-resolve
    ```
 
 ### Checksum Mismatch
@@ -251,7 +251,7 @@ bun run lint:fix
 
 ### Key Files
 
-- `downloader.ts` - Main application logic
+- `daVinciDownloader.ts` - Main application logic
 - `package.json` - Dependencies and scripts
 - `tsconfig.json` - TypeScript configuration
 - `biome.jsonc` - Code quality configuration

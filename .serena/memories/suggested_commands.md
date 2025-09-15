@@ -1,4 +1,4 @@
-# Suggested Commands for dr-downloader (TypeScript/Bun)
+# Suggested Commands for dr-daVinciDownloader (TypeScript/Bun)
 
 ## Development Commands
 
@@ -42,7 +42,7 @@ bun test
 bun test --coverage
 
 # Run specific test file
-bun test tests/downloader.test.ts
+bun test tests/daVinciDownloader.test.ts
 
 # Run tests with verbose output
 bun test --verbose
@@ -78,7 +78,7 @@ The application handles:
 
 ```bash
 # Step 1: Download DaVinci Resolve
-cd /path/to/dr-downloader
+cd /path/to/dr-daVinciDownloader
 bun run start
 
 # Step 2: Install via AUR (file will be found automatically)

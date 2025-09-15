@@ -1,6 +1,6 @@
 # Binaries
-dr-downloader
-dr-downloader-*
+dr-daVinciDownloader
+dr-daVinciDownloader-*
 *.exe
 
 # Test downloads
@@ -33,3 +33,6 @@ node_modules/
 
 # Logs
 logs/
+
+# Downloads
+downloads/

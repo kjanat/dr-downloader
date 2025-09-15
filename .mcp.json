@@ -1,13 +1,12 @@
 {
-	"mcpServers": {
-		"puppeteer": {
-			"type": "stdio",
-			"command": "bunx",
-			"args": ["puppeteer-mcp-server"],
-			"env": {
-				"PUPPETEER_LAUNCH_OPTIONS": "{ \"headless\": false, \"defaultViewport\": { \"width\": 1280, \"height\": 720 } }",
-				"ALLOW_DANGEROUS": "true"
-			}
-		}
-	}
+  "mcpServers": {
+    "puppeteer": {
+      "type": "stdio",
+      "command": "bunx",
+      "args": ["puppeteer-mcp-server"],
+      "env": {
+        "ALLOW_DANGEROUS": "true"
+      }
+    }
+  }
 }

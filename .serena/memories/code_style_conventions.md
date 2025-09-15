@@ -10,7 +10,7 @@
 
 ## Code Organization
 
-- **downloader.ts**: Main application logic with browser automation
+- **daVinciDownloader.ts**: Main application logic with browser automation
 - **package.json**: Dependencies, scripts, and project configuration
 - **tsconfig.json**: TypeScript compiler configuration
 - **biome.jsonc**: Code quality and formatting rules

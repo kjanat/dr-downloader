@@ -1,8 +1,8 @@
-# dr-downloader Project Overview
+# dr-daVinciDownloader Project Overview
 
 ## Purpose
 
-TypeScript/Bun-based downloader tool that solves the AUR DaVinci Resolve installation problem. The AUR package expects a local file but uses a `file://` URL that fails. This tool uses browser automation to handle the complete Blackmagic Design authentication flow and automatically downloads the DaVinci Resolve zip file.
+TypeScript/Bun-based daVinciDownloader tool that solves the AUR DaVinci Resolve installation problem. The AUR package expects a local file but uses a `file://` URL that fails. This tool uses browser automation to handle the complete Blackmagic Design authentication flow and automatically downloads the DaVinci Resolve zip file.
 
 ## Tech Stack
 
@@ -14,7 +14,7 @@ TypeScript/Bun-based downloader tool that solves the AUR DaVinci Resolve install
 
 ## Core Architecture
 
-- **downloader.ts**: Main application with browser automation and download logic
+- **daVinciDownloader.ts**: Main application with browser automation and download logic
 - **package.json**: Dependencies, scripts, and project configuration
 - **tsconfig.json**: TypeScript compiler configuration
 - **biome.jsonc**: Code quality and formatting configuration

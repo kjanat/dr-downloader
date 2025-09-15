@@ -1,26 +1,26 @@
 {
-	"name": "dr-downloader",
-	"module": "downloader.ts",
-	"type": "module",
-	"private": true,
-	"scripts": {
-		"start": "bun run downloader.ts",
-		"dev": "bun --watch downloader.ts",
-		"fake": "bun run downloader.ts --test",
-		"postinstall": "puppeteer browsers install chrome",
-		"format": "biome format --write",
-		"lint": "bunx biome check",
-		"lint:fix": "bunx biome check --write"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "2.2.4",
-		"@types/bun": "^1.2.22",
-		"@types/node": "^24.4.0"
-	},
-	"peerDependencies": {
-		"typescript": "^5.9.2"
-	},
-	"dependencies": {
-		"puppeteer": "^24.20.0"
-	}
+  "name": "dr-downloader",
+  "module": "daVinciDownloader.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run daVinciDownloader.ts",
+    "dev": "bun --watch daVinciDownloader.ts",
+    "fake": "bun run daVinciDownloader.ts --test",
+    "postinstall": "puppeteer browsers install chrome",
+    "format": "biome format --write",
+    "lint": "biome format --write; biome check",
+    "lint:fix": "biome check --write"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.4",
+    "@types/bun": "^1.2.22",
+    "@types/node": "^24.4.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "puppeteer": "^24.20.0"
+  }
 }

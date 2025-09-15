@@ -1,6 +1,6 @@
-# dr-downloader Testing Documentation
+# dr-daVinciDownloader Testing Documentation
 
-Comprehensive testing guide for the TypeScript/Puppeteer-based DaVinci Resolve downloader.
+Comprehensive testing guide for the TypeScript/Puppeteer-based DaVinci Resolve daVinciDownloader.
 
 ## Overview
 
@@ -20,7 +20,7 @@ The project uses **Bun test** as the primary testing framework with TypeScript s
 
 ### Test Files
 
-#### `tests/downloader.test.ts`
+#### `tests/daVinciDownloader.test.ts`
 
 - Browser automation testing
 - Form filling validation
@@ -53,7 +53,7 @@ bun test
 bun test --coverage
 
 # Run specific test file
-bun test tests/downloader.test.ts
+bun test tests/daVinciDownloader.test.ts
 ```
 
 ### Integration Tests
@@ -499,4 +499,4 @@ cat coverage/lcov-report/index.html
 - Test failures show functional problems
 - Performance metrics indicate efficiency
 
-The testing framework ensures the reliability, maintainability, and performance of the TypeScript/Puppeteer-based dr-downloader across all supported browsers and environments.
+The testing framework ensures the reliability, maintainability, and performance of the TypeScript/Puppeteer-based dr-daVinciDownloader across all supported browsers and environments.
