@@ -1,113 +1,107 @@
-# dr-downloader Test Suite Documentation
+# dr-downloader Testing Documentation
 
-Comprehensive testing framework for the DaVinci Resolve downloader with authentication, download functionality, edge case handling, and performance validation.
+Comprehensive testing guide for the TypeScript/Puppeteer-based DaVinci Resolve downloader.
 
 ## Overview
 
-The test suite provides comprehensive coverage for:
+The testing framework covers:
 
-- **Authentication System**: Registration data validation, HTTP form submission, URL extraction
-- **Download Functionality**: Progress tracking, checksum validation, file handling
-- **Edge Cases**: Network failures, filesystem errors, malformed responses
-- **Performance**: Memory usage, throughput, concurrent operations
-- **Integration**: Complete workflow from authentication to file download
+- **Browser Automation**: Puppeteer-based form filling and authentication
+- **Network Interception**: Download URL capture and file handling
+- **Mock Data Testing**: Development testing with fake credentials
+- **Code Quality**: Biome linting and TypeScript type checking
+- **Integration Testing**: Complete workflow from form to download
 
 ## Test Structure
 
-### Core Test Files
+### Core Test Framework
 
-#### `main_test.go`
+The project uses **Bun test** as the primary testing framework with TypeScript support.
 
-- **NewDownloader**: Constructor validation and client configuration
-- **Download**: Complete download workflow testing
-- **verifyChecksum**: SHA256 checksum validation
-- **ProgressWriter**: Download progress tracking functionality
+### Test Files
 
-#### `auth_test.go`
+#### `tests/downloader.test.ts`
 
-- **RegistrationData**: Data structure validation and JSON marshaling
-- **AuthenticatedDownloader**: HTTP client configuration and timeout handling
-- **GetAuthenticatedDownloadURL**: Authentication workflow and URL extraction
-- **GetProductUUID**: Version mapping and error handling
-- **Form Data Encoding**: URL encoding and special character handling
+- Browser automation testing
+- Form filling validation
+- Network request interception
+- Download workflow testing
 
-#### `integration_test.go`
+#### `tests/integration.test.ts`
 
-- **TestFullDownloadWorkflow**: Complete end-to-end authentication and download
-- **TestDownloadWithExistingFile**: File existence and validation behavior
-- **TestDownloadProgressTracking**: Progress reporting during large downloads
-- **TestAuthenticationRetry**: Retry logic and failure recovery
-- **TestDownloadCancellation**: Interruption handling (future enhancement)
-- **TestErrorRecovery**: Network disconnection and corruption handling
+- End-to-end workflow testing
+- AUR cache detection
+- File placement verification
 
-#### `edge_cases_test.go`
+#### `tests-examples/demo-todo-app.spec.ts`
 
-- **TestEdgeCases_FilesystemErrors**: Permission denied, long filenames, special characters
-- **TestEdgeCases_HTTPResponses**: Missing headers, zero content, redirects, chunked encoding
-- **TestEdgeCases_ChecksumValidation**: Case sensitivity, invalid length, empty checksums
-- **TestEdgeCases_ProgressWriter**: Large writes, many small writes, negative values
-- **TestEdgeCases_Authentication**: Unicode characters, long fields, malformed responses
-- **TestEdgeCases_ConcurrentDownloads**: Multiple simultaneous downloads
-- **TestEdgeCases_MemoryConstraints**: Large file streaming behavior
-- **TestEdgeCases_FileSystemLimits**: Null bytes, path separators, reserved names
+- Playwright example tests
+- Browser interaction patterns
+- Local storage handling
 
-#### `performance_test.go`
+## Test Categories
 
-- **BenchmarkDownloadProgress**: Progress tracking performance across file sizes
-- **BenchmarkChecksumValidation**: SHA256 validation performance
-- **BenchmarkAuthenticationFormEncoding**: Form data processing performance
-- **BenchmarkConcurrentDownloads**: Throughput under concurrent load
-- **TestPerformance_LargeFileDownload**: 50MB download performance validation
-- **TestPerformance_MemoryUsage**: Memory consumption during streaming
-- **TestPerformance_ProgressUpdateFrequency**: Progress update rate optimization
-- **TestPerformance_ComparativeThoughput**: Performance across different network conditions
+### Unit Tests
 
-#### `test_utils.go`
-
-Comprehensive testing utilities and mock servers:
-
-- **TestUtils**: Main utility struct for test management
-- **CreateMockDownloadServer**: Configurable HTTP server for download testing
-- **CreateMockAuthServer**: Authentication server with flexible response options
-- **CreateTestFile/CreateLargeTestFile**: Test file generation with checksums
-- **RunFullWorkflowTest**: Complete scenario testing framework
-- **Performance Metrics**: Detailed performance tracking and analysis
-
-### Test Categories
-
-#### Unit Tests
-
-Focus on individual components in isolation:
+Test individual functions and components in isolation:
 
 ```bash
-make test-unit          # Run unit tests only
-./run_tests.sh -u -v    # Verbose unit tests
+# Run unit tests
+bun test
+
+# Run with coverage
+bun test --coverage
+
+# Run specific test file
+bun test tests/downloader.test.ts
 ```
 
-#### Integration Tests
+### Integration Tests
 
-Test complete workflows and component interaction:
+Test complete browser automation workflows:
 
 ```bash
-make test-integration   # Run integration tests only
-./run_tests.sh -i -v    # Verbose integration tests
+# Run integration tests
+bun test tests/integration.test.ts
+
+# Verbose output
+bun test --verbose
+
+# Run with timeout for long operations
+bun test --timeout 60000
 ```
 
-#### Performance Tests
+### Mock Data Testing
 
-Validate performance characteristics and resource usage:
+Use the built-in test mode for development:
 
 ```bash
-make test-performance   # Run performance tests only
-./run_tests.sh -p -v    # Verbose performance tests
+# Run test mode (uses mock credentials)
+bun run fake
+
+# This will:
+# - Use predefined test data (US, New York)
+# - Go through complete form automation
+# - Capture download URL without actual download
+# - Show all network traffic and form interactions
 ```
 
-#### Edge Case Tests
+### Code Quality Testing
 
-Comprehensive error condition and boundary testing:
+Ensure code quality and type safety:
 
 ```bash
-go test -v -run "TestEdgeCases" .
+# Run TypeScript type checking
+bun run type-check
+
+# Run Biome linting
+bun run lint
+
+# Fix linting issues
+bun run lint:fix
+
+# Format code
+bun run format
 ```
 
 ## Test Execution
@@ -115,338 +109,394 @@ go test -v -run "TestEdgeCases" .
 ### Quick Start
 
 ```bash
-# Run all tests with coverage
-make test-all
+# Install dependencies
+bun install
 
-# Run quick tests (short mode)
-make test-quick
+# Run all tests
+bun test
 
-# Run with race detection
-make test-race
+# Run linting
+bun run lint
+
+# Test the application in mock mode
+bun run fake
 ```
 
-### Detailed Test Runner
-
-The `run_tests.sh` script provides comprehensive test execution:
+### Development Testing
 
 ```bash
-# All tests with coverage and verbose output
-./run_tests.sh -v -c
+# Run in development mode with file watching
+bun run dev
 
-# Unit tests only in short mode
-./run_tests.sh -u -s
+# Run test mode for debugging
+bun run fake
 
-# Performance tests with benchmarks
-./run_tests.sh -p -b
-
-# Integration tests with race detection
-./run_tests.sh -i -r
+# Check code quality
+bun run lint
 ```
 
-### Test Runner Options
+### Available Scripts
 
-```sh
--h, --help              Show help message
--v, --verbose           Enable verbose output
--u, --unit-only         Run only unit tests
--i, --integration-only  Run only integration tests
--p, --performance-only  Run only performance tests
--c, --coverage          Generate coverage report
--b, --benchmark         Run benchmarks
--s, --short             Run tests in short mode
--r, --race              Enable race detection
---timeout DURATION      Set test timeout
-```
+| Script       | Description                     | Usage                |
+|--------------|---------------------------------|----------------------|
+| `test`       | Run all test suites            | `bun test`           |
+| `fake`       | Run with mock credentials       | `bun run fake`       |
+| `dev`        | Development mode with watching  | `bun run dev`        |
+| `lint`       | Code quality checks             | `bun run lint`       |
+| `lint:fix`   | Auto-fix linting issues        | `bun run lint:fix`   |
+| `format`     | Format code with Biome          | `bun run format`     |
 
-## Test Coverage
+## Test Configuration
 
-### Coverage Goals
+### TypeScript Configuration
 
-- **Unit Tests**: >90% line coverage
-- **Integration Tests**: Critical path coverage
-- **Edge Cases**: Error condition coverage
-- **Performance**: Resource usage validation
-
-### Coverage Reporting
-
-```bash
-# Generate HTML coverage report
-make coverage
-
-# View coverage summary
-go tool cover -func=coverage.out
-
-# Open HTML report
-open coverage.html
-```
-
-### Coverage Analysis
-
-The test suite tracks coverage across:
-
-- Authentication functions (95%+ target)
-- Download workflow (90%+ target)
-- Error handling paths (85%+ target)
-- Progress tracking (95%+ target)
-
-## Performance Benchmarking
-
-### Benchmark Execution
-
-```bash
-# Run all benchmarks
-make benchmark
-
-# Run specific benchmarks
-go test -bench=BenchmarkDownloadProgress -benchmem
-
-# Save benchmark results
-go test -bench=. -benchmem > benchmark.out
-```
-
-### Performance Metrics
-
-- **Download Progress**: <1ms per update
-- **Checksum Validation**: >100MB/s throughput
-- **Authentication**: <100ms form encoding
-- **Memory Usage**: <10% of file size during streaming
-
-### Throughput Expectations
-
-- **Local Testing**: >50MB/s
-- **Network Simulation**: Adapts to artificial delays
-- **Concurrent Downloads**: Linear scaling up to 8 connections
-
-## Mock Servers and Test Data
-
-### Mock Download Server
-
-Configurable HTTP server for download testing:
-
-```go
-server := testUtils.CreateMockDownloadServer(content,
-    WithChunkDelay(10*time.Millisecond),
-    WithStatusCode(http.StatusOK),
-    WithFailAfterBytes(1024),
-)
-```
-
-### Mock Authentication Server
-
-Flexible authentication server with validation:
-
-```go
-server := testUtils.CreateMockAuthServer(
-    WithAuthResponseType("json"),
-    WithAuthRequiredFields([]string{"firstname", "lastname"}),
-    WithAuthValidation(customValidationFunc),
-)
-```
-
-### Test Data Generation
-
-```go
-// Small test file with checksum
-file, checksum, err := testUtils.CreateTestFile("test.zip", "content")
-
-// Large file for performance testing
-file, checksum, err := testUtils.CreateLargeTestFile("large.zip", 10) // 10MB
-```
-
-## Test Scenarios
-
-### Complete Workflow Testing
-
-```go
-scenario := TestScenario{
-    Name:            "successful_download",
-    Content:         testContent,
-    AuthServer:      authServer,
-    DownloadServer:  downloadServer,
-    RegData:         registrationData,
-    ProductUUID:     "test-uuid",
-    VerifyChecksum:  true,
-    ExpectedContent: testContent,
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["bun-types", "node"]
+  }
 }
-
-testUtils.RunFullWorkflowTest(t, scenario)
 ```
 
-### Error Scenario Testing
+### Biome Configuration
 
-- Network timeouts and disconnections
-- Invalid authentication responses
-- Filesystem permission errors
-- Checksum validation failures
-- Memory pressure conditions
+```json
+{
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "noExplicitAny": "error"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "tab",
+    "lineWidth": 80
+  }
+}
+```
 
-## Continuous Integration
+## Browser Testing with Puppeteer
 
-### CI Test Configuration
+### Test Mode Features
+
+The application includes a comprehensive test mode:
+
+```typescript
+// Example test configuration
+const testMode = process.argv.includes('--test');
+
+if (testMode) {
+  console.log('🧪 Running in test mode with mock credentials');
+  // Uses predefined test data
+  // Shows detailed logging
+  // Captures URLs without downloading
+}
+```
+
+### Browser Automation Testing
+
+```typescript
+// Example browser test
+describe('DaVinci Resolve Downloader', () => {
+  it('should fill form correctly', async () => {
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+
+    // Test form filling logic
+    await page.goto('https://www.blackmagicdesign.com/event/davinciresolvedownload');
+
+    // Verify form elements
+    expect(await page.$('#country')).toBeTruthy();
+    expect(await page.$('#state')).toBeTruthy();
+
+    await browser.close();
+  });
+});
+```
+
+### Network Interception Testing
+
+```typescript
+// Example network monitoring test
+it('should capture download URL', async () => {
+  const capturedUrls: string[] = [];
+
+  page.on('request', (request) => {
+    const url = request.url();
+    if (url.includes('swr.cloud.blackmagicdesign.com')) {
+      capturedUrls.push(url);
+    }
+  });
+
+  // Trigger download process
+  await clickDownloadButton();
+
+  expect(capturedUrls.length).toBeGreaterThan(0);
+  expect(capturedUrls[0]).toContain('DaVinci_Resolve');
+});
+```
+
+## Mock Data and Test Scenarios
+
+### Test Credentials
+
+The application uses safe mock credentials for testing:
+
+```typescript
+const testFormData = {
+  firstname: 'Test',
+  lastname: 'User',
+  email: 'test@example.com',
+  phone: '555-123-4567',
+  country: 'us',
+  state: 'string:New York',
+  city: 'Test City',
+  street: 'Test Street',
+  zipcode: '12345'
+};
+```
+
+### Test Scenarios
+
+1. **Form Automation Test**
+   - Navigate to download page
+   - Fill all required fields
+   - Select country and state
+   - Check policy agreement
+   - Submit form
+
+2. **Network Capture Test**
+   - Monitor HTTP requests
+   - Capture download URL
+   - Verify URL format
+   - Test URL accessibility
+
+3. **Error Handling Test**
+   - Test network failures
+   - Test form validation errors
+   - Test browser crashes
+   - Test timeout scenarios
+
+## Performance Testing
+
+### Browser Performance
 
 ```bash
-# Quick CI tests (under 5 minutes)
-make ci-quick
+# Test with Chrome DevTools metrics
+bun run fake
 
-# Full CI test suite with coverage
-make ci-test
-
-# Docker-based testing (if Dockerfile.test exists)
-make docker-test
+# Monitor:
+# - Page load time
+# - Form interaction speed
+# - Network request timing
+# - Memory usage
 ```
 
-### Pre-commit Testing
+### Download Performance
 
-```bash
-# Run pre-commit checks
-make pre-commit
+- **URL Capture**: <2 seconds after form submission
+- **Form Filling**: <5 seconds for complete automation
+- **Browser Launch**: <3 seconds for headless mode
+- **Memory Usage**: <100MB during operation
 
-# Individual checks
-make fmt lint test-quick
-```
-
-## Test Debugging
+## Debugging Tests
 
 ### Verbose Output
 
-Enable verbose logging for detailed test execution:
+Enable detailed logging during tests:
 
 ```bash
-./run_tests.sh -v
-go test -v -run TestSpecificTest
+# Run with debug output
+DEBUG=true bun run fake
+
+# Show browser interactions (non-headless)
+HEADLESS=false bun run fake
 ```
 
-### Race Detection
+### Browser Debugging
 
-Detect race conditions in concurrent code:
+```typescript
+// Launch browser with DevTools
+const browser = await puppeteer.launch({
+  headless: false,
+  devtools: true,
+  slowMo: 100 // Slow down for debugging
+});
+```
+
+### Network Debugging
+
+```typescript
+// Log all network requests
+page.on('request', (request) => {
+  console.log(`→ ${request.method()} ${request.url()}`);
+});
+
+page.on('response', (response) => {
+  console.log(`← ${response.status()} ${response.url()}`);
+});
+```
+
+## Continuous Integration
+
+### CI Configuration
+
+```yaml
+# Example GitHub Actions workflow
+name: Test
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install
+      - run: bun run lint
+      - run: bun test
+      - run: bun run fake
+```
+
+### Pre-commit Hooks
 
 ```bash
-go test -race ./...
-make test-race
+#!/bin/bash
+# pre-commit hook
+bun run lint
+bun test
+echo "All tests passed!"
 ```
-
-### Memory Profiling
-
-Profile memory usage during tests:
-
-```bash
-go test -memprofile=mem.prof -bench=BenchmarkLargeDownload
-go tool pprof mem.prof
-```
-
-### Test Isolation
-
-Each test uses isolated temporary directories and mock servers to prevent interference.
-
-## Best Practices
-
-### Test Organization
-
-- Table-driven tests for multiple scenarios
-- Proper setup and teardown with `t.TempDir()`
-- Mock servers closed with `defer server.Close()`
-- Clear test names describing the scenario
-
-### Error Testing
-
-- Test both expected and unexpected error conditions
-- Verify specific error messages when appropriate
-- Test error recovery and cleanup
-
-### Performance Testing
-
-- Use realistic test data sizes
-- Measure both time and memory usage
-- Test under various load conditions
-- Include baseline performance expectations
-
-### Integration Testing
-
-- Test complete workflows end-to-end
-- Use realistic mock server responses
-- Verify file system state after operations
-- Test authentication and download integration
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### Test Timeouts
+#### Browser Launch Failures
 
 ```bash
-# Increase timeout for slow tests
-./run_tests.sh --timeout 60m
+# Install Chrome manually if needed
+bun run postinstall
+
+# Check Chrome installation
+which google-chrome
 ```
 
-#### Permission Errors
+#### Network Timeout Issues
 
 ```bash
-# Ensure test directory is writable
-chmod -R 755 test_tmp_*
+# Increase timeout in tests
+export TIMEOUT=60000
+bun test
 ```
 
-#### Mock Server Conflicts
-
-Tests use `httptest.NewServer()` for automatic port allocation.
-
-#### Coverage Issues
+#### TypeScript Errors
 
 ```bash
-# Clean test cache
-go clean -testcache
-make clean-test
+# Check TypeScript configuration
+bunx tsc --noEmit
+
+# Verify types are installed
+bun install @types/node
 ```
 
 ### Debug Output
 
-Enable debug output in tests:
+Enable debug logging:
 
-```go
-t.Logf("Debug info: %v", debugData)
+```bash
+# Show detailed browser operations
+DEBUG=puppeteer:* bun run fake
+
+# Show network requests
+DEBUG=network bun run fake
 ```
+
+## Best Practices
+
+### Test Organization
+
+- Use descriptive test names
+- Group related tests with `describe` blocks
+- Clean up resources with `afterEach`
+- Use TypeScript for type safety
+
+### Browser Testing
+
+- Always close browsers in tests
+- Use headless mode for CI
+- Handle async operations properly
+- Test both success and error cases
+
+### Code Quality
+
+- Follow Biome formatting rules
+- Use TypeScript strict mode
+- Write self-documenting code
+- Add JSDoc comments for complex functions
+
+### Error Handling
+
+- Test network failures
+- Test browser crashes
+- Test invalid form data
+- Test timeout scenarios
 
 ## Contributing to Tests
 
 ### Adding New Tests
 
-1. Follow table-driven test patterns
-2. Use test utilities for common operations
-3. Include both positive and negative test cases
-4. Add performance tests for new functionality
+1. Create test file in `tests/` directory
+2. Follow existing naming conventions
+3. Use TypeScript with proper typing
+4. Include both positive and negative cases
+5. Add performance considerations
 
 ### Test Naming Convention
 
-- `TestFunctionName_Scenario` for unit tests
-- `TestIntegration_Workflow` for integration tests
-- `TestPerformance_Metric` for performance tests
-- `TestEdgeCases_Condition` for edge cases
+- `describe('Component')` for test grouping
+- `it('should do something')` for individual tests
+- Use clear, descriptive test names
+- Group by functionality, not by file structure
 
-### Mock Server Extensions
+### Mock Data Guidelines
 
-Add new server options in `test_utils.go`:
-
-```go
-func WithCustomBehavior(behavior string) ServerOption {
-    return func(c *ServerConfig) {
-        c.CustomBehavior = behavior
-    }
-}
-```
+- Use realistic but safe test data
+- Don't use real personal information
+- Include edge cases in test data
+- Document test scenarios clearly
 
 ## Test Results and Reporting
 
 ### Artifacts Generated
 
-- `coverage.out`: Coverage data
-- `coverage.html`: HTML coverage report
-- `benchmark.out`: Benchmark results
-- Test logs with timestamps and performance metrics
+- TypeScript compilation results
+- Biome linting reports
+- Test execution logs
+- Screenshot captures (if enabled)
+
+### Coverage Reporting
+
+```bash
+# Generate coverage report
+bun test --coverage
+
+# View coverage summary
+cat coverage/lcov-report/index.html
+```
 
 ### Interpreting Results
 
-- Coverage percentage by function and overall
-- Benchmark results with memory allocations
-- Performance metrics (throughput, latency)
-- Test execution time and resource usage
+- TypeScript errors indicate type safety issues
+- Biome warnings highlight code quality concerns
+- Test failures show functional problems
+- Performance metrics indicate efficiency
 
-The comprehensive test suite ensures reliability, performance, and maintainability of the dr-downloader project across all supported use cases and environments.
+The testing framework ensures the reliability, maintainability, and performance of the TypeScript/Puppeteer-based dr-downloader across all supported browsers and environments.

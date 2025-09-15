@@ -1,6 +1,6 @@
 # DaVinci Resolve Downloader
 
-A Go-based tool to download DaVinci Resolve for Linux, designed to solve the file download issues with AUR packages.
+A TypeScript/Bun-based tool to download DaVinci Resolve for Linux, designed to solve the file download issues with AUR packages. Uses Puppeteer for browser automation to handle the complete Blackmagic Design authentication flow.
 
 ## Problem
 
@@ -16,15 +16,21 @@ This tool downloads the DaVinci Resolve zip file from the official Blackmagic De
 
 ## Features
 
-- 🚀 Fast downloads with progress tracking
-- 🔐 **Automatic authentication** with Blackmagic Design (replicates browser flow)
-- 📁 Auto-detects AUR cache directories (yay, paru, aurutils)
-- ✅ Optional SHA256 checksum verification
-- 🔄 Resume support for interrupted downloads
-- 📦 Multiple version support
+- 🚀 **Automatic download** with progress tracking
+- 🔐 **Browser automation** with Puppeteer for complete authentication flow
+- 📁 Auto-detects AUR cache directories (yay, paru, aurutils, pikaur)
+- ✅ **Form automation** - handles country/state selection and policy agreements
+- 🔄 **Network interception** - captures download URLs automatically
+- 🧪 **Test mode** with mock credentials for development
 - 🎯 Direct integration with AUR workflow
+- 📦 TypeScript with full type safety
 
 ## Installation
+
+### Prerequisites
+
+- [Bun](https://bun.sh/) runtime
+- Chrome browser (automatically installed by Puppeteer)
 
 ### From Source
 
@@ -33,91 +39,88 @@ This tool downloads the DaVinci Resolve zip file from the official Blackmagic De
 git clone https://github.com/yourusername/dr-downloader.git
 cd dr-downloader
 
-# Build the binary
-go build -o dr-downloader main.go
+# Install dependencies
+bun install
 
-# Optional: Install to PATH
-sudo cp dr-downloader /usr/local/bin/
+# Run the tool
+bun run start
 ```
 
-### Quick Build
+### Quick Setup
 
 ```bash
 cd /home/kjanat/projects/dr-downloader
-go build
+bun install
 ```
 
 ## Usage
 
-### Basic Usage (Auto-detect AUR cache)
+### Basic Usage (Production Mode)
 
 ```bash
-# Interactive authentication (will prompt for registration data)
-./dr-downloader
+# Run with real credentials (will prompt for registration data)
+bun run start
 
 # The tool will:
-# 1. Find your AUR helper's cache directory (e.g., ~/.cache/yay/davinci-resolve/)
-# 2. Prompt for your registration information (required for reliable downloads)
-# 3. Authenticate with Blackmagic Design using your data
-# 4. Download the file to the correct location
+# 1. Launch Chrome browser in headless mode
+# 2. Navigate to Blackmagic Design download page
+# 3. Fill out the registration form automatically
+# 4. Handle country/state selection and policy agreement
+# 5. Capture the download URL and start automatic download
+# 6. Place the file in the correct AUR cache location
 ```
 
-### Authentication Options
+### Test Mode (Development)
 
 ```bash
-# Provide registration data via command line (non-interactive)
-./dr-downloader \
-  -firstname "Your" \
-  -lastname "Name" \
-  -email "your.email@example.com" \
-  -phone "+1-555-123-4567" \
-  -country "United States" \
-  -state "Your State" \
-  -city "Your City" \
-  -street "Your Address" \
-  -zipcode "12345"
+# Run in test mode with mock credentials
+bun run fake
 
-# Use direct URL (if you have a pre-authenticated URL)
-./dr-downloader -url "https://swr.cloud.blackmagicdesign.com/DaVinciResolve/v20.2/DaVinci_Resolve_20.2_Linux.zip?verify=12345"
+# Test mode uses predefined mock data:
+# - Country: United States
+# - State: New York
+# - All required fields filled automatically
+# - No actual download (captures URL only)
 ```
 
-### Why Registration Data is Required
+### Why Browser Automation is Used
 
-Blackmagic Design requires user registration for downloads. The tool replicates the browser-based authentication flow but needs real registration data for reliability. Using fake/default data may result in failed downloads.
+Blackmagic Design uses a complex Angular.js form with dynamic country/state loading and policy agreements. The browser automation approach:
 
-### Specify Output Location
+1. **Handles JavaScript**: Properly loads dynamic form elements
+2. **Manages Sessions**: Maintains cookies and session state
+3. **Captures Downloads**: Intercepts the actual download URL
+4. **Reliable Authentication**: Replicates exact browser behavior
+
+### Command Line Options
 
 ```bash
-# Download to specific directory
-./dr-downloader -output ~/Downloads/DaVinci_Resolve_20.2_Linux.zip
+# Run in test mode (development)
+bun run fake
 
-# Download to specific AUR cache
-./dr-downloader -aur-cache ~/.cache/yay/davinci-resolve
+# Run in production mode
+bun run start
+
+# Run with development/watch mode
+bun run dev
+
+# Format code
+bun run format
+
+# Run linter
+bun run lint
+
+# Fix linting issues
+bun run lint:fix
 ```
 
-### Download Different Version
+### Configuration
 
-```bash
-# Download version 20.1.1
-./dr-downloader -version 20.1.1
+The tool automatically:
 
-# Download version 19.0.3
-./dr-downloader -version 19.0.3
-```
-
-### Verify Download
-
-```bash
-# Verify with checksum (if known)
-./dr-downloader -verify -checksum "sha256_hash_here"
-```
-
-### Force Redownload
-
-```bash
-# Redownload even if file exists
-./dr-downloader -force
-```
+- Detects AUR cache directories (yay, paru, aurutils, pikaur)
+- Handles the latest DaVinci Resolve version (20.2)
+- Places files in the correct location for AUR packages
 
 ## Integration with AUR
 
@@ -125,7 +128,8 @@ Blackmagic Design requires user registration for downloads. The tool replicates 
 
 ```bash
 # Step 1: Download the file
-./dr-downloader
+cd /path/to/dr-downloader
+bun run start
 
 # Step 2: Install via AUR (file will be found automatically)
 yay -Syu davinci-resolve
@@ -138,9 +142,12 @@ Create a wrapper script `install-davinci.sh`:
 ```bash
 #!/bin/bash
 
+# Navigate to dr-downloader directory
+cd /path/to/dr-downloader
+
 # Download DaVinci Resolve
 echo "Downloading DaVinci Resolve..."
-/usr/local/bin/dr-downloader
+bun run start
 
 # Check if download was successful
 if [ $? -eq 0 ]; then
@@ -152,28 +159,16 @@ else
 fi
 ```
 
-### Method 3: Modified PKGBUILD
+## Available Scripts
 
-You can modify the PKGBUILD to use this downloader:
-
-```bash
-# In prepare() function of PKGBUILD, add:
-if [ ! -f "DaVinci_Resolve_${pkgver}_Linux.zip" ]; then
-    /usr/local/bin/dr-downloader -version ${pkgver}
-fi
-```
-
-## Command Line Options
-
-| Option       | Description             | Default                 |
-|--------------|-------------------------|-------------------------|
-| `-url`       | Custom download URL     | Official Blackmagic URL |
-| `-output`    | Output file path        | Auto-detect AUR cache   |
-| `-verify`    | Verify SHA256 checksum  | false                   |
-| `-checksum`  | Expected SHA256 hash    | (empty)                 |
-| `-aur-cache` | AUR cache directory     | Auto-detect             |
-| `-force`     | Force redownload        | false                   |
-| `-version`   | DaVinci Resolve version | 20.2                    |
+| Script       | Description                    | Usage                |
+|--------------|--------------------------------|----------------------|
+| `start`      | Run production mode           | `bun run start`      |
+| `fake`       | Run test mode with mock data  | `bun run fake`       |
+| `dev`        | Run with file watching        | `bun run dev`        |
+| `format`     | Format code with Biome        | `bun run format`     |
+| `lint`       | Check code quality            | `bun run lint`       |
+| `lint:fix`   | Auto-fix linting issues       | `bun run lint:fix`   |
 
 ## Supported AUR Helpers
 
@@ -224,40 +219,83 @@ yay -Syu davinci-resolve --skipinteg
 
 ## Development
 
-### Building
+### Tech Stack
+
+- **Runtime**: Bun (JavaScript/TypeScript runtime)
+- **Language**: TypeScript
+- **Browser Automation**: Puppeteer
+- **Code Quality**: Biome (formatting & linting)
+- **Type Safety**: Full TypeScript with strict mode
+
+### Development Workflow
 
 ```bash
-go build -o dr-downloader main.go
+# Install dependencies
+bun install
+
+# Run in development mode (with file watching)
+bun run dev
+
+# Run tests with mock data
+bun run fake
+
+# Format code
+bun run format
+
+# Check code quality
+bun run lint
+
+# Auto-fix linting issues
+bun run lint:fix
 ```
 
-### Testing
+### Key Files
 
-```bash
-go test ./...
-```
+- `downloader.ts` - Main application logic
+- `package.json` - Dependencies and scripts
+- `tsconfig.json` - TypeScript configuration
+- `biome.jsonc` - Code quality configuration
 
-### Cross-compiling
+## Architecture
 
-```bash
-# For Windows
-GOOS=windows GOARCH=amd64 go build -o dr-downloader.exe
+### Browser Automation Flow
 
-# For macOS
-GOOS=darwin GOARCH=amd64 go build -o dr-downloader-mac
-```
+1. **Launch**: Puppeteer launches Chrome in headless mode
+2. **Navigate**: Goes to Blackmagic Design download page
+3. **Form Fill**: Automatically fills registration form with provided data
+4. **Dynamic Loading**: Waits for country/state dropdowns to load
+5. **Policy Agreement**: Checks required policy checkbox
+6. **Download Trigger**: Clicks the download button
+7. **URL Capture**: Intercepts the download URL via network monitoring
+8. **File Download**: Automatically downloads the file to AUR cache
+9. **Progress Tracking**: Shows download progress and completion
 
-## Configuration
+### Network Interception
 
-The `config.yaml` file contains:
+The tool uses Puppeteer's network interception to:
 
-- Download URLs for different versions
-- Expected checksums
-- Mirror URLs
-- AUR cache directory paths
+- Monitor all HTTP requests
+- Capture the authenticated download URL
+- Start automatic download when URL is detected
+- Handle redirects and authentication tokens
 
 ## Contributing
 
-Pull requests are welcome! Please update the config.yaml when new DaVinci Resolve versions are released.
+Pull requests are welcome!
+
+### Code Quality Standards
+
+- Use TypeScript with strict type checking
+- Follow Biome formatting and linting rules
+- Test all changes with `bun run fake` before submitting
+- Ensure all linting passes with `bun run lint`
+
+### Adding New Features
+
+1. Update TypeScript types as needed
+2. Add test scenarios to verify functionality
+3. Update documentation
+4. Ensure backward compatibility
 
 ## License
 

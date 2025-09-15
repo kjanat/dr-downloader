@@ -1,99 +1,102 @@
-# Suggested Commands for dr-downloader
+# Suggested Commands for dr-downloader (TypeScript/Bun)
 
-## Build Commands
+## Development Commands
 
 ```bash
-# Quick build for current platform
-go build -o dr-downloader
+# Install dependencies
+bun install
 
-# Build with build script (includes cross-platform options)
-./build.sh
+# Run in production mode
+bun run start
 
-# Build using Makefile
-make build
+# Run in test mode (with mock credentials)
+bun run fake
+
+# Development mode with file watching
+bun run dev
+```
+
+## Code Quality Commands
+
+```bash
+# Format code with Biome
+bun run format
+
+# Run linting checks
+bun run lint
+
+# Auto-fix linting issues
+bun run lint:fix
+
+# Type checking (if configured)
+bunx tsc --noEmit
 ```
 
 ## Testing Commands
 
 ```bash
 # Run all tests
-make test-all
-
-# Run quick tests (short mode)
-make test-quick
+bun test
 
 # Run tests with coverage
-make coverage
+bun test --coverage
 
-# Run specific test categories
-make test-unit          # Unit tests only
-make test-integration   # Integration tests only
-make test-performance   # Performance tests only
+# Run specific test file
+bun test tests/downloader.test.ts
 
-# Using test script with options
-./run_tests.sh -v -c    # Verbose with coverage
-./run_tests.sh -u -s    # Unit tests in short mode
-./run_tests.sh -p -b    # Performance tests with benchmarks
-```
+# Run tests with verbose output
+bun test --verbose
 
-## Quality Commands
-
-```bash
-# Format code
-make fmt
-gofmt -w .
-
-# Lint code
-make lint
-golangci-lint run
-
-# Static analysis
-go vet ./...
+# Run tests with timeout for long operations
+bun test --timeout 60000
 ```
 
 ## Application Usage
 
 ```bash
-# Basic usage (auto-detect AUR cache)
-./dr-downloader
+# Basic usage - production mode with real credentials
+bun run start
 
-# Interactive authentication
-./dr-downloader
+# Test mode - uses mock credentials (US, New York)
+bun run fake
 
-# With command line auth data
-./dr-downloader \
-  -firstname "Your" \
-  -lastname "Name" \
-  -email "your.email@example.com" \
-  -phone "+1-555-123-4567" \
-  -country "United States" \
-  -state "Your State" \
-  -city "Your City" \
-  -street "Your Address" \
-  -zipcode "12345"
-
-# Download specific version
-./dr-downloader -version 20.1.1
-
-# Download to specific location
-./dr-downloader -output ~/Downloads/DaVinci_Resolve_20.2_Linux.zip
-
-# Force redownload
-./dr-downloader -force
-
-# With checksum verification
-./dr-downloader -verify -checksum "sha256_hash_here"
+# Development mode - watches for file changes
+bun run dev
 ```
 
-## Integration Commands
+## Browser Automation Features
+
+The application handles:
+
+- Automatic form filling with provided registration data
+- Dynamic country/state dropdown selection
+- Policy agreement checkbox automation
+- Download URL capture via network interception
+- Automatic file download to AUR cache directories
+
+## AUR Integration Commands
 
 ```bash
-# Complete installation workflow
-./install-davinci.sh
+# Step 1: Download DaVinci Resolve
+cd /path/to/dr-downloader
+bun run start
 
-# Installation with specific version
-./install-davinci.sh --version 20.1.1
+# Step 2: Install via AUR (file will be found automatically)
+yay -Syu davinci-resolve
 
-# Force redownload and install
-./install-davinci.sh --force
+# Alternative: Use test mode for development
+bun run fake  # Captures URL without downloading
+```
+
+## Debugging Commands
+
+```bash
+# Run with debug output
+DEBUG=true bun run fake
+
+# Show browser interactions (non-headless)
+HEADLESS=false bun run fake
+
+# Detailed browser operations
+DEBUG=puppeteer:* bun run fake
 ```

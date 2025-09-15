@@ -6,58 +6,65 @@
 
 ```bash
 # Format the code
-make fmt
-# OR
-gofmt -s -w .
-# OR
-golangci-lint fmt
+bun run format
 
-# Lint the code
-make lint
-# OR
-golangci-lint run --fix
+# Lint the code  
+bun run lint
 
-# Static analysis
-go vet ./...
+# Fix linting issues automatically
+bun run lint:fix
+
+# TypeScript type checking
+bunx tsc --noEmit
 ```
 
 ### 2. Testing (Required)
 
 ```bash
-# Run all tests to ensure nothing is broken
-make test-all
+# Run all tests
+bun test
 
-# Run quick tests for faster feedback
-make test-quick
+# Run tests with coverage
+bun test --coverage
 
-# For performance-sensitive changes
-make test-performance
+# Run specific test file
+bun test tests/downloader.test.ts
+
+# Run with verbose output
+bun test --verbose
 ```
 
 ### 3. Build Verification (Required)
 
 ```bash
-# Ensure the project builds successfully
-make build
-# OR
-go build -o dr-downloader
+# Test the application in mock mode
+bun run fake
+
+# Test production mode (requires real credentials)
+bun run start
+
+# Development mode with file watching
+bun run dev
 ```
 
 ### 4. Integration Testing (Recommended)
 
 ```bash
-# Test the actual application works
-./dr-downloader --help
+# Test the actual download workflow (test mode)
+bun run fake
 
-# Test download functionality (if applicable)
-./dr-downloader -output /tmp/test-download.zip -version 20.2
+# Verify browser automation works
+DEBUG=true bun run fake
+
+# Non-headless mode for debugging
+HEADLESS=false bun run fake
 ```
 
 ### 5. Documentation Updates (If Needed)
 
-- Update README.md if new features/flags added
-- Update CLAUDE.md for development guidance
-- Update help text in flag definitions
+- Update README.md if new features/scripts added
+- Update TESTING.md for testing guidance
+- Update package.json scripts if needed
 
 ### 6. Git Workflow
 
@@ -66,7 +73,7 @@ go build -o dr-downloader
 git add .
 
 # Commit with descriptive message
-git commit -m "fix: implement proper form-based authentication for Blackmagic Design"
+git commit -m "feat: implement automatic download functionality with Puppeteer"
 
 # Push if working on shared repository
 git push
@@ -74,10 +81,10 @@ git push
 
 ## Pre-commit Checklist
 
-- [ ] Code formatted with gofmt
-- [ ] No linting errors
+- [ ] Code formatted with Biome
+- [ ] No linting errors or warnings
 - [ ] All tests pass
-- [ ] Application builds successfully
+- [ ] Application runs successfully in test mode
 - [ ] Documentation updated if needed
 - [ ] Git commit with clear message
 
@@ -85,8 +92,19 @@ git push
 
 ```bash
 # Quick CI-style check
-make fmt lint test-quick build
+bun run lint && bun test && bun run fake
 
-# Full CI-style check
-make fmt lint test-all coverage build
+# Full quality check
+bun run lint:fix && bun run format && bun test --coverage && bun run fake
 ```
+
+## Available Scripts Reference
+
+| Script       | Description                     | Usage                |
+|--------------|---------------------------------|----------------------|
+| `start`      | Run production mode            | `bun run start`      |
+| `fake`       | Run test mode with mock data   | `bun run fake`       |
+| `dev`        | Run with file watching         | `bun run dev`        |
+| `lint`       | Code quality checks            | `bun run lint`       |
+| `lint:fix`   | Auto-fix linting issues       | `bun run lint:fix`   |
+| `format`     | Format code with Biome         | `bun run format`     |

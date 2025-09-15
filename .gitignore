@@ -23,3 +23,13 @@ Thumbs.db
 # Build artifacts
 dist/
 build/
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# Logs
+logs/
