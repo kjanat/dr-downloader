@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"crypto/sha256"
 	"encoding/hex"
 	"flag"
@@ -14,12 +15,12 @@ import (
 )
 
 const (
-	// Official DaVinci Resolve download URLs
+	// DefaultDownloadURL - Official DaVinci Resolve download URLs
 	// These need to be updated when new versions are released
 	DefaultDownloadURL = "https://swr.cloud.blackmagicdesign.com/DaVinciResolve/v20.2/DaVinci_Resolve_20.2_Linux.zip"
 	DefaultFilename    = "DaVinci_Resolve_20.2_Linux.zip"
 
-	// Expected SHA256 checksum (update this with actual checksum)
+	// ExpectedChecksum - Expected SHA256 checksum (update this with actual checksum)
 	ExpectedChecksum = "" // Will be populated once we have the official checksum
 )
 
@@ -79,7 +80,10 @@ func (d *Downloader) Download() error {
 	}
 	defer func() {
 		if err := out.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to close file: %v\n", err)
+			_, err := fmt.Fprintf(os.Stderr, "Warning: failed to close file: %v\n", err)
+			if err != nil {
+				return
+			}
 		}
 	}()
 
@@ -87,19 +91,28 @@ func (d *Downloader) Download() error {
 	resp, err := d.Client.Get(d.URL)
 	if err != nil {
 		if err := os.Remove(d.Destination + ".tmp"); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to remove temp file: %v\n", err)
+			_, err := fmt.Fprintf(os.Stderr, "Warning: failed to remove temp file: %v\n", err)
+			if err != nil {
+				return err
+			}
 		}
 		return fmt.Errorf("failed to download: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to close response body: %v\n", err)
+			_, err := fmt.Fprintf(os.Stderr, "Warning: failed to close response body: %v\n", err)
+			if err != nil {
+				return
+			}
 		}
 	}()
 
 	if resp.StatusCode != http.StatusOK {
 		if err := os.Remove(d.Destination + ".tmp"); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to remove temp file: %v\n", err)
+			_, err := fmt.Fprintf(os.Stderr, "Warning: failed to remove temp file: %v\n", err)
+			if err != nil {
+				return err
+			}
 		}
 		return fmt.Errorf("bad status: %s", resp.Status)
 	}
@@ -118,7 +131,10 @@ func (d *Downloader) Download() error {
 	_, err = io.Copy(progress, resp.Body)
 	if err != nil {
 		if err := os.Remove(d.Destination + ".tmp"); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to remove temp file: %v\n", err)
+			_, err := fmt.Fprintf(os.Stderr, "Warning: failed to remove temp file: %v\n", err)
+			if err != nil {
+				return err
+			}
 		}
 		return fmt.Errorf("failed to save file: %w", err)
 	}
@@ -156,7 +172,10 @@ func (d *Downloader) verifyChecksum() error {
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: failed to close file: %v\n", err)
+			_, err := fmt.Fprintf(os.Stderr, "Warning: failed to close file: %v\n", err)
+			if err != nil {
+				return
+			}
 		}
 	}()
 
@@ -199,15 +218,106 @@ func (p *ProgressWriter) printProgress() {
 	fmt.Printf("\rProgress: %.2f%% (%.2f MB / %.2f MB)", percent, downloaded, total)
 }
 
+// getRegistrationData validates and prompts for missing registration data
+func getRegistrationData(firstName, lastName, email, phone, country, state, city, street, zipcode, company string) (RegistrationData, error) {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	// Helper function to prompt for input if empty
+	promptIfEmpty := func(value, prompt string) string {
+		if value != "" {
+			return value
+		}
+		fmt.Printf("%s: ", prompt)
+		if scanner.Scan() {
+			return strings.TrimSpace(scanner.Text())
+		}
+		return ""
+	}
+
+	// Validate and prompt for required fields
+	firstName = promptIfEmpty(firstName, "First name")
+	if firstName == "" {
+		return RegistrationData{}, fmt.Errorf("first name is required")
+	}
+
+	lastName = promptIfEmpty(lastName, "Last name")
+	if lastName == "" {
+		return RegistrationData{}, fmt.Errorf("last name is required")
+	}
+
+	email = promptIfEmpty(email, "Email address")
+	if email == "" || !strings.Contains(email, "@") {
+		return RegistrationData{}, fmt.Errorf("valid email address is required")
+	}
+
+	phone = promptIfEmpty(phone, "Phone number")
+	if phone == "" {
+		return RegistrationData{}, fmt.Errorf("phone number is required")
+	}
+
+	country = promptIfEmpty(country, "Country")
+	if country == "" {
+		return RegistrationData{}, fmt.Errorf("country is required")
+	}
+
+	state = promptIfEmpty(state, "State/Province")
+	if state == "" {
+		return RegistrationData{}, fmt.Errorf("state/province is required")
+	}
+
+	city = promptIfEmpty(city, "City")
+	if city == "" {
+		return RegistrationData{}, fmt.Errorf("city is required")
+	}
+
+	street = promptIfEmpty(street, "Street address")
+	if street == "" {
+		return RegistrationData{}, fmt.Errorf("street address is required")
+	}
+
+	zipcode = promptIfEmpty(zipcode, "ZIP/Postal code")
+	if zipcode == "" {
+		return RegistrationData{}, fmt.Errorf("ZIP/postal code is required")
+	}
+
+	// Company is optional
+	company = promptIfEmpty(company, "Company (optional, press Enter to skip)")
+
+	return RegistrationData{
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     email,
+		Phone:     phone,
+		Country:   country,
+		State:     state,
+		City:      city,
+		Street:    street,
+		ZipCode:   zipcode,
+		Company:   company,
+	}, nil
+}
+
 func main() {
 	var (
-		url      = flag.String("url", DefaultDownloadURL, "Download URL")
+		url      = flag.String("url", "", "Download URL (if empty, will authenticate with Blackmagic Design)")
 		output   = flag.String("output", "", "Output file path")
 		verify   = flag.Bool("verify", false, "Verify checksum after download")
 		checksum = flag.String("checksum", ExpectedChecksum, "Expected SHA256 checksum")
 		aurCache = flag.String("aur-cache", "", "AUR cache directory (auto-detect if not specified)")
 		force    = flag.Bool("force", false, "Force redownload even if file exists")
 		version  = flag.String("version", "20.2", "DaVinci Resolve version")
+
+		// Authentication parameters - require real data for reliability
+		firstName = flag.String("firstname", "", "First name for registration (required)")
+		lastName  = flag.String("lastname", "", "Last name for registration (required)")
+		email     = flag.String("email", "", "Email for registration (required)")
+		phone     = flag.String("phone", "", "Phone for registration (required)")
+		country   = flag.String("country", "", "Country for registration (required)")
+		state     = flag.String("state", "", "State for registration (required)")
+		city      = flag.String("city", "", "City for registration (required)")
+		street    = flag.String("street", "", "Street address for registration (required)")
+		zipcode   = flag.String("zipcode", "", "ZIP code for registration (required)")
+		company   = flag.String("company", "", "Company name for registration (optional)")
 	)
 
 	flag.Parse()
@@ -248,20 +358,72 @@ func main() {
 	// Handle force flag
 	if *force {
 		if err := os.Remove(destination); err != nil && !os.IsNotExist(err) {
-			fmt.Fprintf(os.Stderr, "Warning: failed to remove existing file: %v\n", err)
+			_, err := fmt.Fprintf(os.Stderr, "Warning: failed to remove existing file: %v\n", err)
+			if err != nil {
+				return
+			}
 		}
 	}
 
-	// Update URL if version is different
+	// Determine download URL
+	downloadURL := *url
+
+	// If no URL provided, use authentication to get signed URL
+	if downloadURL == "" {
+		fmt.Println("No URL provided, using authentication to get download URL...")
+
+		// Validate and collect registration data
+		regData, err := getRegistrationData(*firstName, *lastName, *email, *phone, *country, *state, *city, *street, *zipcode, *company)
+		if err != nil {
+			_, err := fmt.Fprintf(os.Stderr, "Registration data error: %v\n", err)
+			if err != nil {
+				return
+			}
+			os.Exit(1)
+		}
+
+		// Get product UUID for version
+		productUUID, err := GetProductUUID(*version)
+		if err != nil {
+			_, err := fmt.Fprintf(os.Stderr, "Unsupported version: %v\n", err)
+			if err != nil {
+				return
+			}
+			os.Exit(1)
+		}
+
+		// Get authenticated download URL
+		authDownloader := NewAuthenticatedDownloader()
+		authURL, err := authDownloader.GetAuthenticatedDownloadURL(regData, productUUID)
+		if err != nil {
+			_, err := fmt.Fprintf(os.Stderr, "Authentication failed: %v\n", err)
+			if err != nil {
+				return
+			}
+			os.Exit(1)
+		}
+
+		downloadURL = authURL
+		fmt.Printf("✓ Authentication successful, got download URL\n")
+	} else {
+		// Update URL if version is different and URL was provided
+		if *version != "20.2" {
+			downloadURL = fmt.Sprintf("https://swr.cloud.blackmagicdesign.com/DaVinciResolve/v%s/DaVinci_Resolve_%s_Linux.zip", *version, *version)
+		}
+	}
+
+	// Update destination filename for different versions
 	if *version != "20.2" {
-		*url = fmt.Sprintf("https://swr.cloud.blackmagicdesign.com/DaVinciResolve/v%s/DaVinci_Resolve_%s_Linux.zip", *version, *version)
 		destination = strings.ReplaceAll(destination, "20.2", *version)
 	}
 
-	downloader := NewDownloader(*url, destination, *verify, *checksum)
+	downloader := NewDownloader(downloadURL, destination, *verify, *checksum)
 
 	if err := downloader.Download(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		_, err := fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		if err != nil {
+			return
+		}
 		os.Exit(1)
 	}
 
