@@ -6,7 +6,7 @@ A Go-based tool to download DaVinci Resolve for Linux, designed to solve the fil
 
 When installing DaVinci Resolve through AUR (e.g., `yay -Syu davinci-resolve`), the package expects the DaVinci Resolve zip file to be available locally. The PKGBUILD uses a `file://` URL which fails if the file isn't already downloaded:
 
-```
+```text
 ==> ERROR: Failure while downloading file://DaVinci_Resolve_20.2_Linux.zip
 ```
 
@@ -17,6 +17,7 @@ This tool downloads the DaVinci Resolve zip file from the official Blackmagic De
 ## Features
 
 - 🚀 Fast downloads with progress tracking
+- 🔐 **Automatic authentication** with Blackmagic Design (replicates browser flow)
 - 📁 Auto-detects AUR cache directories (yay, paru, aurutils)
 - ✅ Optional SHA256 checksum verification
 - 🔄 Resume support for interrupted downloads
@@ -51,12 +52,38 @@ go build
 ### Basic Usage (Auto-detect AUR cache)
 
 ```bash
-# Download to auto-detected AUR cache directory
+# Interactive authentication (will prompt for registration data)
 ./dr-downloader
 
-# The tool will automatically find your AUR helper's cache directory
-# (e.g., ~/.cache/yay/davinci-resolve/)
+# The tool will:
+# 1. Find your AUR helper's cache directory (e.g., ~/.cache/yay/davinci-resolve/)
+# 2. Prompt for your registration information (required for reliable downloads)
+# 3. Authenticate with Blackmagic Design using your data
+# 4. Download the file to the correct location
 ```
+
+### Authentication Options
+
+```bash
+# Provide registration data via command line (non-interactive)
+./dr-downloader \
+  -firstname "Your" \
+  -lastname "Name" \
+  -email "your.email@example.com" \
+  -phone "+1-555-123-4567" \
+  -country "United States" \
+  -state "Your State" \
+  -city "Your City" \
+  -street "Your Address" \
+  -zipcode "12345"
+
+# Use direct URL (if you have a pre-authenticated URL)
+./dr-downloader -url "https://swr.cloud.blackmagicdesign.com/DaVinciResolve/v20.2/DaVinci_Resolve_20.2_Linux.zip?verify=12345"
+```
+
+### Why Registration Data is Required
+
+Blackmagic Design requires user registration for downloads. The tool replicates the browser-based authentication flow but needs real registration data for reliability. Using fake/default data may result in failed downloads.
 
 ### Specify Output Location
 
@@ -138,15 +165,15 @@ fi
 
 ## Command Line Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `-url` | Custom download URL | Official Blackmagic URL |
-| `-output` | Output file path | Auto-detect AUR cache |
-| `-verify` | Verify SHA256 checksum | false |
-| `-checksum` | Expected SHA256 hash | (empty) |
-| `-aur-cache` | AUR cache directory | Auto-detect |
-| `-force` | Force redownload | false |
-| `-version` | DaVinci Resolve version | 20.2 |
+| Option       | Description             | Default                 |
+|--------------|-------------------------|-------------------------|
+| `-url`       | Custom download URL     | Official Blackmagic URL |
+| `-output`    | Output file path        | Auto-detect AUR cache   |
+| `-verify`    | Verify SHA256 checksum  | false                   |
+| `-checksum`  | Expected SHA256 hash    | (empty)                 |
+| `-aur-cache` | AUR cache directory     | Auto-detect             |
+| `-force`     | Force redownload        | false                   |
+| `-version`   | DaVinci Resolve version | 20.2                    |
 
 ## Supported AUR Helpers
 
@@ -234,7 +261,7 @@ Pull requests are welcome! Please update the config.yaml when new DaVinci Resolv
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License—see LICENSE file for details
 
 ## Acknowledgments
 
