@@ -36,3 +36,6 @@ logs/
 
 # Downloads
 downloads/
+
+.playwright-mcp
+logs

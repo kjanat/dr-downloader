@@ -18,12 +18,14 @@ This tool downloads the DaVinci Resolve zip file from the official Blackmagic De
 
 - 🚀 **Automatic download** with progress tracking
 - 🔐 **Browser automation** with Puppeteer for complete authentication flow
+- ✅ **Smart validation** - mirrors Blackmagic Design's exact form requirements
 - 📁 Auto-detects AUR cache directories (yay, paru, aurutils, pikaur)
-- ✅ **Form automation** - handles country/state selection and policy agreements
+- ⚙️ **Flexible configuration** - CLI args, environment variables, and validation testing
 - 🔄 **Network interception** - captures download URLs automatically
 - 🧪 **Test mode** with mock credentials for development
 - 🎯 Direct integration with AUR workflow
 - 📦 TypeScript with full type safety
+- 🛡️ **Pre-flight validation** - catch errors before browser launch
 
 ## Installation
 
@@ -104,6 +106,12 @@ bun run start
 # Run with development/watch mode
 bun run dev
 
+# Validate configuration without downloading
+bun run start --validate-only
+
+# Override specific registration fields
+bun run start --email "your@email.com" --country "US" --state "California"
+
 # Format code
 bun run format
 
@@ -112,6 +120,53 @@ bun run lint
 
 # Fix linting issues
 bun run lint:fix
+```
+
+#### Validation and Configuration
+
+The tool includes comprehensive validation that mirrors the exact requirements of Blackmagic Design's website:
+
+```bash
+# Test your configuration before downloading
+bun run start --validate-only
+
+# See all available options
+bun run start --help
+```
+
+**Available CLI Arguments:**
+
+- `--firstname <name>` - Your first name
+- `--lastname <name>` - Your last name
+- `--email <email>` - Valid email address (validated using BMD's exact regex)
+- `--phone <phone>` - Phone number (optional, digits/spaces/parentheses/+-only)
+- `--country <country>` - Country code (e.g., "US", "UK") or full name
+- `--state <state>` - State/Province (required for US/Canada)
+- `--city <city>` - City name
+- `--street <address>` - Street address
+- `--zipcode <zip>` - Postal/ZIP code
+- `--company <name>` - Company name (optional)
+- `--platform <platform>` - Target platform: linux | mac | windows
+- `--validate-only` - Validate configuration and exit
+- `--test` - Run in test mode (no actual download)
+
+**Environment Variable Support:**
+All registration fields can be set via environment variables:
+
+```bash
+export DAVINCI_FIRSTNAME="John"
+export DAVINCI_LASTNAME="Doe"
+export DAVINCI_EMAIL="john.doe@example.com"
+export DAVINCI_PHONE="555-123-4567"
+export DAVINCI_COUNTRY="US"
+export DAVINCI_STATE="New York"
+export DAVINCI_CITY="New York"
+export DAVINCI_STREET="123 Main St"
+export DAVINCI_ZIPCODE="10001"
+export DAVINCI_COMPANY="My Company"
+
+# Then run normally
+bun run start
 ```
 
 ### Configuration
@@ -182,12 +237,64 @@ The tool auto-detects cache directories for:
 
 ## Troubleshooting
 
+### Validation Errors
+
+The tool validates all input using Blackmagic Design's exact requirements:
+
+#### Email Validation Errors
+
+```text
+❌ Please enter a valid email address
+```
+
+**Solution:** Use a properly formatted email address (e.g., `user@domain.com`)
+
+#### Phone Validation Errors
+
+```text
+❌ Phone number can only contain numbers, spaces, parentheses, plus and minus signs
+```
+
+**Solution:** Use format like `555-123-4567`, `(555) 123-4567`, or `+1 555 123 4567`
+
+#### Country/State Validation
+
+```text
+❌ State/Province is required
+```
+
+**Solution:** US and Canada require state/province selection
+
+#### Configuration Validation
+
+If you see validation errors at startup:
+
+1. **Check your environment variables:**
+
+   ```bash
+   # List all DAVINCI_* variables
+   env | grep DAVINCI_
+   ```
+
+2. **Validate your configuration:**
+
+   ```bash
+   bun run start --validate-only
+   ```
+
+3. **Fix specific fields:**
+
+   ```bash
+   # Override problematic fields
+   bun run start --email "valid@email.com" --phone "555-123-4567"
+   ```
+
 ### Download Fails
 
 1. Check your internet connection
 2. Verify the URL is still valid
 3. Try using a VPN (some regions may be blocked)
-4. Use `-force` flag to retry
+4. Validate your registration data first: `bun run start --validate-only`
 
 ### File Not Found by AUR
 
