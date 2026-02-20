@@ -8,3 +8,5 @@ export async function main(): Promise<void> {
 	const downloader = new DaVinciDownloader(config);
 	await downloader.run();
 }
+
+if (import.meta.main) main();

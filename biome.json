@@ -24,7 +24,8 @@
 			}
 		},
 		"domains": {
-			"project": "all"
+			"project": "recommended",
+			"test": "recommended"
 		}
 	},
 	"javascript": {
@@ -36,7 +37,7 @@
 		"enabled": true,
 		"actions": {
 			"source": {
-				"organizeImports": "on"
+				"organizeImports": "off"
 			}
 		}
 	},

@@ -1,7 +1,7 @@
+import { formatFileSize } from '@/utils/formatters.ts';
 import { createWriteStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import { formatFileSize } from '@/utils/formatters.ts';
 
 // biome-ignore lint/complexity/noStaticOnlyClass: utility class
 export class StreamDownloader {

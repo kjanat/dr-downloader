@@ -1,6 +1,6 @@
-import { basename } from 'node:path';
 import { findNewestFile, getFileSize } from '@/utils/filesystem.ts';
 import { formatFileSize } from '@/utils/formatters.ts';
+import { basename } from 'node:path';
 
 export class DownloadMonitor {
 	constructor(

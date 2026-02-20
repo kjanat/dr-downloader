@@ -1,7 +1,7 @@
-import type { Page } from 'puppeteer';
 import type { RegistrationData } from '@/config/types.ts';
 import { SELECTORS } from '@/constants/selectors.ts';
 import { type ValidationErrors, ValidationService } from '@/validation/ValidationService.ts';
+import type { Page } from 'puppeteer';
 
 export class FormHandler {
 	constructor(private page: Page) {}

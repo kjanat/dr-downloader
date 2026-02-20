@@ -6,10 +6,10 @@
 	"scripts": {
 		"dev": "bun --watch src/main.ts",
 		"fake": "bun run src/main.ts --test",
-		"format": "biome format --write",
+		"format": "dprint fmt .",
 		"postinstall": "puppeteer browsers install chrome",
 		"lint": "biome lint",
-		"lint:fix": "biome check --write",
+		"lint:fix": "biome lint --write",
 		"start": "bun run src/main.ts",
 		"typecheck": "tsgo --noEmit"
 	},

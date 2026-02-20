@@ -1,6 +1,6 @@
+import type { DownloadConfig } from '@/config/types.ts';
 import { mkdir } from 'node:fs/promises';
 import puppeteer, { type Browser, type Page } from 'puppeteer';
-import type { DownloadConfig } from '@/config/types.ts';
 
 export async function createBrowser(config: DownloadConfig): Promise<Browser> {
 	await mkdir(config.outputDir, { recursive: true }).catch(() => {});

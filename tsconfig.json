@@ -1,9 +1,8 @@
 {
 	"compilerOptions": {
-		"lib": ["ESNext", "dom"],
+		"lib": ["ESNext", "DOM", "DOM.Iterable"],
 		"target": "ESNext",
 		"module": "Preserve",
-		"moduleDetection": "force",
 		"jsx": "react-jsx",
 		"allowJs": true,
 
@@ -18,8 +17,8 @@
 		"noUncheckedIndexedAccess": true,
 		"noImplicitOverride": true,
 
-		"noUnusedLocals": false,
-		"noUnusedParameters": false,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
 		"noPropertyAccessFromIndexSignature": false,
 		"paths": {
 			"@/*": ["./src/*"]
