@@ -70,7 +70,12 @@ export class FormHandler {
 	}
 
 	private async waitForFormLoad(): Promise<void> {
-		await this.page.waitForSelector('form', { visible: true, timeout: 20_000 });
+		// Wait for an actual input inside the form, not just the <form> tag.
+		// AngularJS renders inputs asynchronously after the form element appears.
+		await this.page.waitForSelector('#firstname', {
+			visible: true,
+			timeout: 20_000,
+		});
 	}
 
 	private async typeByLabelOrId(
@@ -84,10 +89,9 @@ export class FormHandler {
 			(label, sel, val) => {
 				const findByLabel = () => {
 					const labs = Array.from(document.querySelectorAll('label'));
+					const norm = (s: string) => s.replace(/[*:\s]+$/g, '').trim().toLowerCase();
 					const match = labs.find(
-						(el) =>
-							(el.textContent || '').trim().toLowerCase()
-								=== label.toLowerCase(),
+						(el) => norm(el.textContent || '') === norm(label),
 					);
 					if (!match) return null;
 					const forId = match.getAttribute('for');

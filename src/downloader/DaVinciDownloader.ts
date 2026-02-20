@@ -164,22 +164,25 @@ export class DaVinciDownloader {
 	private async submitAndCaptureDownloadUrl(
 		page: Page,
 	): Promise<string | null> {
-		// Set up a promise to capture the CDN download URL
+		// Enable request interception BEFORE registering handlers
+		await page.setRequestInterception(true);
+
+		// Single promise + single request handler to capture the CDN download URL
 		const downloadUrlPromise = new Promise<string | null>((resolve) => {
 			const timeout = setTimeout(() => resolve(null), 60_000);
 
-			// Listen for requests to the CDN
 			page.on('request', (request) => {
 				const url = request.url();
 				if (url.includes('swr.cloud.blackmagicdesign.com')) {
 					clearTimeout(timeout);
-					// Abort the actual download - we'll handle it ourselves
 					request.abort().catch(() => {});
 					resolve(url);
+				} else {
+					request.continue().catch(() => {});
 				}
 			});
 
-			// Also listen for responses/redirects
+			// Redundant safety: also capture from response in case abort races
 			page.on('response', (response) => {
 				const url = response.url();
 				if (url.includes('swr.cloud.blackmagicdesign.com')) {
@@ -189,33 +192,40 @@ export class DaVinciDownloader {
 			});
 		});
 
-		// Enable request interception to catch the CDN URL
-		await page.setRequestInterception(true);
-		page.on('request', (request) => {
-			const url = request.url();
-			if (url.includes('swr.cloud.blackmagicdesign.com')) {
-				// Don't continue - we'll download separately
-				return; // handled above
-			}
-			request.continue().catch(() => {});
-		});
-
-		// Click "Register & Download" button
+		// Click "Register & Download" — BMD uses an <a ng-click="onFormSubmission()">
+		// with a "disabled" class that's removed when Angular validates the form.
+		// Trigger Angular's digest cycle to clear the disabled state, then click.
 		console.log('🖱️ Clicking "Register & Download"...');
 		await page.evaluate(() => {
-			const buttons = Array.from(
-				document.querySelectorAll(
-					"button, input[type='submit'], a, [role='button'], [ng-click]",
-				),
+			// Trigger Angular validation on all inputs so the submit link enables
+			for (
+				const input of document.querySelectorAll(
+					'input, select, textarea',
+				)
+			) {
+				input.dispatchEvent(new Event('input', { bubbles: true }));
+				input.dispatchEvent(new Event('change', { bubbles: true }));
+				input.dispatchEvent(new Event('blur', { bubbles: true }));
+			}
+		});
+		// Brief pause for Angular digest cycle
+		await new Promise((r) => setTimeout(r, 500));
+
+		await page.evaluate(() => {
+			const els = Array.from(
+				document.querySelectorAll("a, button, input[type='submit'], [ng-click]"),
 			);
-			const btn = buttons.find((el) =>
+			const btn = els.find((el) =>
 				/register.*download|download.*register/i.test(
 					(el.textContent || '')
 						+ ' '
 						+ ((el as HTMLElement).getAttribute('value') || ''),
 				)
 			);
-			if (btn) (btn as HTMLElement).click();
+			if (btn) {
+				(btn as HTMLElement).classList.remove('disabled');
+				(btn as HTMLElement).click();
+			}
 		});
 
 		return downloadUrlPromise;
