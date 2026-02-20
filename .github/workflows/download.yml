@@ -1,0 +1,25 @@
+name: Download davinci-resolve with Puppeteer
+on: { push: { branches: [master] }, pull_request: {}, workflow_dispatch: {} }
+concurrency: { group: puppeteer, cancel-in-progress: true }
+jobs:
+  download:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with: { node-version: lts/* }
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - name: Install dependencies
+        run: bun i
+      - name: Download davinci-resolve
+        run: bun run start
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: davinci-resolve
+          path: downloads/
+          retention-days: 2
+          if-no-files-found: warn
