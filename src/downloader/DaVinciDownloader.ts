@@ -81,83 +81,37 @@ export class DaVinciDownloader {
 	}
 
 	private async clickFreeDownload(page: Page): Promise<void> {
-		// Look for "Free Download Now" or "Download" button/link on the page
-		await page.waitForFunction(
-			() => {
-				const els = Array.from(
-					document.querySelectorAll("a, button, [role='button']"),
-				);
-				return els.some((el) => /free\s+download/i.test(el.textContent || ''));
-			},
-			{ timeout: 15_000 },
-		);
+		// BMD uses ng-click="selectAndDownloadRelease(...)" on <a> elements.
+		// Target the specific <a> with ng-click to ensure Angular handles the click.
+		const selector = "a[ng-click*='resolve-download-modal'], a[ng-click*='selectAndDownloadRelease']";
+		await page.waitForSelector(selector, { timeout: 15_000 });
+		await page.click(selector);
 
-		await page.evaluate(() => {
-			const els = Array.from(
-				document.querySelectorAll("a, button, [role='button']"),
-			);
-			const el = els.find((e) => /free\s+download/i.test(e.textContent || ''));
-			if (el) (el as HTMLElement).click();
-		});
-
-		// Wait a moment for the modal to start appearing
-		await new Promise((r) => setTimeout(r, 2000));
+		// Wait for the OS selection modal to render
+		await page.waitForSelector('.download-link-item', { timeout: 15_000 });
 	}
 
 	private async clickPlatformInModal(
 		page: Page,
 		platform: string,
 	): Promise<void> {
-		// Wait for the modal/overlay with platform selection to appear
-		// The modal contains links/buttons for each OS. We need to find the Linux one
-		// under the FREE (non-Studio) section.
+		// BMD platform links are <a ng-click="downloadLatestStable('davinci-resolve', 'linux')">
+		// We must click the exact <a> element so Angular's ng-click fires.
+		const platformMap: Record<string, string> = {
+			linux: 'linux',
+			mac: 'mac',
+			windows: 'windows',
+		};
+		const platformKey = platformMap[platform] ?? 'linux';
 
-		const platformName = platform === 'linux' ? 'Linux' : platform === 'mac' ? 'Mac' : 'Windows';
+		// Build selector targeting the free (non-studio) download link
+		const selector = `a[ng-click="downloadLatestStable('davinci-resolve', '${platformKey}')"]`;
+		await page.waitForSelector(selector, { timeout: 15_000 });
+		// Use page.click() for real mouse events — DOM .click() doesn't trigger ng-click reliably
+		await page.click(selector);
 
-		await page.waitForFunction(
-			(name) => {
-				const els = Array.from(
-					document.querySelectorAll(
-						"a, button, [role='button'], .download-link, [class*='platform'], [class*='download']",
-					),
-				);
-				return els.some((el) => {
-					const text = (el.textContent || '').trim();
-					return text.includes(name) && !text.includes('Studio');
-				});
-			},
-			{ timeout: 20_000 },
-			platformName,
-		);
-
-		const clicked = await page.evaluate((name) => {
-			// Find all clickable elements that mention the platform name
-			const els = Array.from(
-				document.querySelectorAll(
-					"a, button, [role='button'], .download-link, [class*='platform'], [class*='download'], [ng-click]",
-				),
-			);
-
-			// Filter to ones that match our platform and are NOT Studio
-			const candidates = els.filter((el) => {
-				const text = (el.textContent || '').trim();
-				return text.includes(name) && !text.includes('Studio');
-			});
-
-			// Prefer the first non-studio match
-			if (candidates.length > 0) {
-				(candidates[0] as HTMLElement).click();
-				return true;
-			}
-			return false;
-		}, platformName);
-
-		if (!clicked) {
-			throw new Error(`Could not find ${platformName} platform link in modal`);
-		}
-
-		// Wait for the registration form to appear
-		await page.waitForSelector('form', { visible: true, timeout: 15_000 });
+		// Wait for the registration form inputs to render (not just <form> tag)
+		await page.waitForSelector('#firstname', { visible: true, timeout: 20_000 });
 		console.log('📋 Registration form loaded');
 	}
 
@@ -192,41 +146,25 @@ export class DaVinciDownloader {
 			});
 		});
 
-		// Click "Register & Download" — BMD uses an <a ng-click="onFormSubmission()">
-		// with a "disabled" class that's removed when Angular validates the form.
-		// Trigger Angular's digest cycle to clear the disabled state, then click.
+		// BMD uses <a ng-click="onFormSubmission()"> with a "disabled" class.
+		// Trigger Angular validation, remove disabled, then real-click.
 		console.log('🖱️ Clicking "Register & Download"...');
 		await page.evaluate(() => {
-			// Trigger Angular validation on all inputs so the submit link enables
-			for (
-				const input of document.querySelectorAll(
-					'input, select, textarea',
-				)
-			) {
-				input.dispatchEvent(new Event('input', { bubbles: true }));
-				input.dispatchEvent(new Event('change', { bubbles: true }));
-				input.dispatchEvent(new Event('blur', { bubbles: true }));
+			for (const el of document.querySelectorAll('input, select, textarea')) {
+				el.dispatchEvent(new Event('input', { bubbles: true }));
+				el.dispatchEvent(new Event('change', { bubbles: true }));
+				el.dispatchEvent(new Event('blur', { bubbles: true }));
 			}
 		});
-		// Brief pause for Angular digest cycle
 		await new Promise((r) => setTimeout(r, 500));
 
-		await page.evaluate(() => {
-			const els = Array.from(
-				document.querySelectorAll("a, button, input[type='submit'], [ng-click]"),
-			);
-			const btn = els.find((el) =>
-				/register.*download|download.*register/i.test(
-					(el.textContent || '')
-						+ ' '
-						+ ((el as HTMLElement).getAttribute('value') || ''),
-				)
-			);
-			if (btn) {
-				(btn as HTMLElement).classList.remove('disabled');
-				(btn as HTMLElement).click();
-			}
-		});
+		// Remove disabled class so click handler proceeds
+		const submitSelector = "a[ng-click='onFormSubmission()']";
+		await page.evaluate((sel) => {
+			const el = document.querySelector(sel);
+			if (el) el.classList.remove('disabled');
+		}, submitSelector);
+		await page.click(submitSelector);
 
 		return downloadUrlPromise;
 	}

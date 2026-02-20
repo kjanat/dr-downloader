@@ -1,5 +1,7 @@
 import type { DownloadConfig, Platform, RegistrationData } from '@/config/types.ts';
 import { ValidationService } from '@/validation/ValidationService.ts';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 
 export class ConfigManager {
 	private readonly registrationData: RegistrationData;
@@ -126,7 +128,7 @@ export class ConfigManager {
 		const retryEnv = Number(process.env.RETRY_ATTEMPTS);
 
 		return {
-			outputDir: process.env.DEFAULT_OUTPUT_PATH || './downloads',
+			outputDir: process.env.DEFAULT_OUTPUT_PATH || join(homedir(), 'Downloads'),
 			testMode: false,
 			timeout: Number.isFinite(timeoutEnv) && timeoutEnv > 0
 				? timeoutEnv
@@ -200,7 +202,7 @@ DaVinci Resolve Downloader
 
 Options:
   -t, --test           Run in test mode (no actual download)
-  -o, --output <dir>   Download directory (default: ./downloads)
+  -o, --output <dir>   Download directory (default: ~/Downloads)
   --platform <p>       linux | mac | windows (default: autodetect)
   --firstname <name>
   --lastname <name>
