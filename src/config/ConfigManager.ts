@@ -1,7 +1,7 @@
-import { type DownloadConfig, isPlatform, type Platform, PLATFORMS, type RegistrationData } from '@/config/types.ts';
-import { ValidationService } from '@/validation/ValidationService.ts';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { type DownloadConfig, isPlatform, PLATFORMS, type Platform, type RegistrationData } from '@/config/types.ts';
+import { ValidationService } from '@/validation/ValidationService.ts';
 
 export class ConfigManager {
 	private readonly registrationData: RegistrationData;
@@ -14,6 +14,9 @@ export class ConfigManager {
 		// Validate loaded configuration
 		this.validateConfiguration();
 	}
+
+	/** AUR cache path used by yay/paru for the davinci-resolve package. */
+	static readonly AUR_OUTPUT_DIR = join(homedir(), '.cache', 'yay', 'davinci-resolve');
 
 	parseCliArgs(args: string[]): void {
 		const boolFlags = new Set(['--test', '-t']);
@@ -70,6 +73,13 @@ export class ConfigManager {
 		// Handle validate-only flag
 		if (arg === '--validate-only') {
 			this.validateAndExit();
+			return 0;
+		}
+
+		// Handle --aur preset: output to yay cache, force linux platform
+		if (arg === '--aur') {
+			this.downloadConfig.outputDir = ConfigManager.AUR_OUTPUT_DIR;
+			this.registrationData.platform = 'linux';
 			return 0;
 		}
 
@@ -198,7 +208,8 @@ export class ConfigManager {
 	}
 
 	private applyRegistrationArg(arg: string, value: string): void {
-		const map: Record<string, keyof RegistrationData> = {
+		type RegistrationField = Exclude<keyof RegistrationData, 'platform'>;
+		const map: Record<string, RegistrationField> = {
 			'--firstname': 'firstname',
 			'--lastname': 'lastname',
 			'--email': 'email',
@@ -212,7 +223,6 @@ export class ConfigManager {
 		};
 		const prop = map[arg];
 		if (prop) {
-			// @ts-expect-error index
 			this.registrationData[prop] = value;
 		}
 	}
@@ -224,6 +234,7 @@ DaVinci Resolve Downloader
 Options:
   -t, --test           Run in test mode (no actual download)
   -o, --output <dir>   Download directory (default: ~/Downloads)
+  --aur                AUR preset: output to ~/.cache/yay/davinci-resolve/, platform linux
   --platform <p>       ${PLATFORMS.join(' | ')} (default: autodetect)
   --firstname <name>
   --lastname <name>

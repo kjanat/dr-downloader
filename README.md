@@ -18,49 +18,51 @@ This tool solves that by downloading the file first.
 ## Quick start
 
 ```bash
-git clone https://github.com/kjanat/dr-downloader.git
-cd dr-downloader
-bun install
-bun run start
+# install globally
+bun install -g davinci-resolve-downloader
+
+# or run directly
+bunx davinci-resolve-downloader
 ```
 
 Downloads to `~/Downloads/` by default.
 
 ### Prerequisites
 
-- [Bun]
+- [Bun] (or Node.js with npm/npx)
 - Chrome (auto-installed by Puppeteer via `postinstall`)
 
 ## Usage
 
 ```bash
-bun run start                              # download (defaults to ~/Downloads/)
-bun run start -o ./my-dir                  # custom output directory
-bun run start --platform mac               # linux | mac | windows (default: autodetect)
-bun run start --email you@example.com      # override registration fields
-bun run start --validate-only              # validate config without downloading
-bun run start --test                       # test mode: fill form, skip download
-bun run start --help                       # show all options
+dr-downloader                              # download (defaults to ~/Downloads/)
+dr-downloader -o ./my-dir                  # custom output directory
+dr-downloader --platform mac               # linux | mac | windows (default: autodetect)
+dr-downloader --email you@example.com      # override registration fields
+dr-downloader --validate-only              # validate config without downloading
+dr-downloader --test                       # test mode: fill form, skip download
+dr-downloader --help                       # show all options
 ```
 
 ### CLI flags
 
-| Flag                 | Description                                     |
-| -------------------- | ----------------------------------------------- |
-| `-o, --output <dir>` | Download directory (default: `~/Downloads`)     |
-| `--platform <p>`     | `linux`, `mac`, `windows` (default: autodetect) |
-| `--firstname <name>` | First name                                      |
-| `--lastname <name>`  | Last name                                       |
-| `--email <email>`    | Email address                                   |
-| `--phone <phone>`    | Phone number                                    |
-| `--country <code>`   | Country code or full name (e.g. `US`)           |
-| `--state <state>`    | State/province (required for US/CA)             |
-| `--city <city>`      | City                                            |
-| `--street <addr>`    | Street address                                  |
-| `--zipcode <zip>`    | Postal code                                     |
-| `--company <name>`   | Company (optional)                              |
-| `--validate-only`    | Validate config and exit                        |
-| `-t, --test`         | Test mode: no actual download                   |
+| Flag                 | Description                                           |
+| -------------------- | ----------------------------------------------------- |
+| `-o, --output <dir>` | Download directory (default: `~/Downloads`)           |
+| `--aur`              | AUR preset: output to `~/.cache/yay/davinci-resolve/` |
+| `--platform <p>`     | `linux`, `mac`, `windows` (default: autodetect)       |
+| `--firstname <name>` | First name                                            |
+| `--lastname <name>`  | Last name                                             |
+| `--email <email>`    | Email address                                         |
+| `--phone <phone>`    | Phone number                                          |
+| `--country <code>`   | Country code or full name (e.g. `US`)                 |
+| `--state <state>`    | State/province (required for US/CA)                   |
+| `--city <city>`      | City                                                  |
+| `--street <addr>`    | Street address                                        |
+| `--zipcode <zip>`    | Postal code                                           |
+| `--company <name>`   | Company (optional)                                    |
+| `--validate-only`    | Validate config and exit                              |
+| `-t, --test`         | Test mode: no actual download                         |
 
 ### Environment variables
 
@@ -90,10 +92,8 @@ Priority: defaults -> env vars -> CLI args.
 ## AUR integration
 
 ```bash
-# 1. Download
-bun run start -o ~/.cache/yay/davinci-resolve/
-
-# 2. Install
+# download directly to yay cache + install
+dr-downloader --aur
 yay -S davinci-resolve
 ```
 
@@ -103,7 +103,7 @@ yay -S davinci-resolve
 - This tool only downloads the publicly available free installer
 - Registration data defaults to placeholder values; override with your own
 
-<!--link definitions-->
+<!--link-definitions-->
 
 [DaVinci Resolve]: https://www.blackmagicdesign.com/products/davinciresolve
 [Bun]: https://bun.sh/
