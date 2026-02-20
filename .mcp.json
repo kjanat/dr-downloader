@@ -1,12 +1,12 @@
 {
-  "mcpServers": {
-    "puppeteer": {
-      "type": "stdio",
-      "command": "bunx",
-      "args": ["puppeteer-mcp-server"],
-      "env": {
-        "ALLOW_DANGEROUS": "true"
-      }
-    }
-  }
+	"mcpServers": {
+		"puppeteer": {
+			"type": "stdio",
+			"command": "bunx",
+			"args": ["puppeteer-mcp-server"],
+			"env": {
+				"ALLOW_DANGEROUS": "true"
+			}
+		}
+	}
 }

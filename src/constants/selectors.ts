@@ -1,19 +1,22 @@
 export const SELECTORS = {
-  firstname: "#firstname",
-  lastname: "#lastname",
-  email: "#email",
-  phone: "#phone",
-  company: "#company",
-  street: "#street",
-  city: "#city",
-  zipcode: "#zip, #zipcode",
-  country: "#country",
-  state: "#state",
-  policy: "#policy",
+	firstname: '#firstname',
+	lastname: '#lastname',
+	email: '#email',
+	phone: '#phone',
+	company: '#company',
+	street: '#street',
+	city: '#city',
+	zipcode: '#zip, #zipcode',
+	country: '#country',
+	state: '#state',
 
-  platformButtons: {
-    linux: "Download Linux",
-    mac: "Download Mac",
-    windows: "Download Windows",
-  },
+	// Main page
+	freeDownloadButton: 'a[href*="davinciresolve"]',
+
+	// Modal OS selection - these are the platform links in the download modal
+	platformLinks: {
+		linux: 'Linux',
+		mac: 'Mac OS X',
+		windows: 'Windows',
+	},
 } as const;
