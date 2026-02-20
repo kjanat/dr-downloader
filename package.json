@@ -1,9 +1,17 @@
 {
-	"name": "dr-downloader",
-	"private": true,
+	"name": "davinci-resolve-downloader",
+	"version": "0.0.0",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/kjanat/dr-downloader.git"
+	},
 	"type": "module",
 	"module": "src/main.ts",
+	"bin": {
+		"dr-downloader": "dist/main.js"
+	},
 	"scripts": {
+		"build": "bun build src/main.ts --format esm --target node --outdir dist --minify",
 		"dev": "bun --watch src/main.ts",
 		"fake": "bun run src/main.ts --test",
 		"format": "dprint fmt .",

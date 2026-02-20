@@ -1,6 +1,6 @@
-/**
- * ValidationService - Mirrors Blackmagic Design website validation patterns
- * Extracted from their Angular bmdEmailValidator and bmdPhoneValidator directives
+/** ValidationService - Mirrors Blackmagic Design website validation patterns
+ *
+ * Extracted from their Angular `bmdEmailValidator` and `bmdPhoneValidator` directives
  */
 
 export interface ValidationResult {
@@ -14,16 +14,19 @@ export interface ValidationErrors {
 
 // biome-ignore lint/complexity/noStaticOnlyClass: not now
 export class ValidationService {
-	// Exact email regex pattern from BMD's bmdEmailValidator directive
+	/** Exact email regex pattern from BMD's `bmdEmailValidator` directive */
 	private static readonly EMAIL_PATTERN =
 		/^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([A-Za-z0-9-]+\.)+[A-Za-z0-9-]{2,}))$/;
 
-	// Exact phone regex pattern from BMD's bmdPhoneValidator directive
+	/** Exact phone regex pattern from BMD's `bmdPhoneValidator` directive */
 	private static readonly PHONE_PATTERN = /^[\s\d()+-]+$/;
 
-	/**
-	 * Validates email using BMD's exact pattern
-	 * Mirrors: i.$validators.email = function(t) { return i.$isEmpty(t) || e.test(t) }
+	/** Validates email using BMD's exact pattern:
+	 * ```js
+	 * i.$validators.email = function(t) {
+	 *     return i.$isEmpty(t) || e.test(t)
+	 * }
+	 * ```
 	 */
 	static validateEmail(email: string): ValidationResult {
 		// BMD allows empty emails (optional field)
@@ -38,9 +41,12 @@ export class ValidationService {
 		};
 	}
 
-	/**
-	 * Validates phone using BMD's exact pattern
-	 * Mirrors: i.$validators.tel = function(t) { return i.$isEmpty(t) || e.test(t) }
+	/** Validates phone using BMD's exact pattern:
+	 * ```js
+	 * i.$validators.tel = function(t) {
+	 *     return i.$isEmpty(t) || e.test(t)
+	 * }
+	 * ````
 	 */
 	static validatePhone(phone: string): ValidationResult {
 		// BMD allows empty phone (optional field)
@@ -57,8 +63,8 @@ export class ValidationService {
 		};
 	}
 
-	/**
-	 * Validates required fields (non-empty strings)
+	/** Validates required fields (non-empty strings)
+	 *
 	 * Mirrors BMD's required field behavior
 	 */
 	static validateRequired(value: string, fieldName: string): ValidationResult {
@@ -69,8 +75,8 @@ export class ValidationService {
 		};
 	}
 
-	/**
-	 * Validates zipcode (basic format check)
+	/** Validates zipcode (basic format check)
+	 *
 	 * BMD appears to accept various formats based on country
 	 */
 	static validateZipcode(zipcode: string): ValidationResult {
@@ -86,9 +92,7 @@ export class ValidationService {
 		};
 	}
 
-	/**
-	 * Validates country selection
-	 */
+	/** Validates country selection */
 	static validateCountry(country: string): ValidationResult {
 		if (ValidationService.isEmpty(country)) {
 			return { isValid: false, error: 'Country is required' };
@@ -104,9 +108,7 @@ export class ValidationService {
 		};
 	}
 
-	/**
-	 * Validates state selection (required for countries that have states)
-	 */
+	/** Validates state selection (required for countries that have states) */
 	static validateState(state: string, country: string): ValidationResult {
 		// Only validate state for countries that require it (like US, CA)
 		const requiresState = ValidationService.countryRequiresState(country);
@@ -122,8 +124,8 @@ export class ValidationService {
 		return { isValid: true };
 	}
 
-	/**
-	 * Comprehensive validation for all registration data
+	/** Comprehensive validation for all registration data
+	 *
 	 * Returns all validation errors found
 	 */
 	static validateRegistrationData(
@@ -270,9 +272,9 @@ export class ValidationService {
 		}
 	}
 
-	/**
-	 * Mirrors Angular's $isEmpty() function behavior
-	 * Checks for undefined, null, empty string, or whitespace-only string
+	/** Mirrors Angular's `$isEmpty()` function behavior
+	 *
+	 * Checks for `undefined`, `null`, empty string, or whitespace-only string
 	 */
 	private static isEmpty(value: unknown): boolean {
 		return (
@@ -283,8 +285,8 @@ export class ValidationService {
 		);
 	}
 
-	/**
-	 * Determines if a country requires state/province selection
+	/** Determines if a country requires state/province selection
+	 *
 	 * Based on common BMD form behavior
 	 */
 	private static countryRequiresState(country: string): boolean {

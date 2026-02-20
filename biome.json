@@ -6,15 +6,8 @@
 		"useIgnoreFile": true,
 		"defaultBranch": "master"
 	},
-	"files": {
-		"ignoreUnknown": false
-	},
-	"formatter": {
-		"enabled": false,
-		"indentStyle": "tab",
-		"indentWidth": 2,
-		"lineWidth": 100
-	},
+	"files": { "ignoreUnknown": true },
+	"formatter": { "enabled": false },
 	"linter": {
 		"enabled": true,
 		"rules": {
@@ -26,19 +19,6 @@
 		"domains": {
 			"project": "recommended",
 			"test": "recommended"
-		}
-	},
-	"javascript": {
-		"formatter": {
-			"quoteStyle": "single"
-		}
-	},
-	"assist": {
-		"enabled": true,
-		"actions": {
-			"source": {
-				"organizeImports": "off"
-			}
 		}
 	},
 	"json": {
