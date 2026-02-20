@@ -1,8 +1,8 @@
+import type { Page } from 'puppeteer';
 import type { ConfigManager } from '@/config/ConfigManager.ts';
 import { FormHandler } from '@/downloader/FormHandler.ts';
 import { StreamDownloader } from '@/downloader/StreamDownloader.ts';
 import { createBrowser, createPage } from '@/utils/browser.ts';
-import type { Page } from 'puppeteer';
 
 export class DaVinciDownloader {
 	private formHandler?: FormHandler;
@@ -48,12 +48,10 @@ export class DaVinciDownloader {
 			console.log('🖱️ Clicking "Free Download Now"...');
 			await this.clickFreeDownload(page);
 
-			// Step 3: Wait for modal and click Linux platform
-			console.log('🐧 Selecting Linux platform...');
-			await this.clickPlatformInModal(
-				page,
-				this.config.getRegistrationData().platform,
-			);
+			// Step 3: Wait for modal and click platform
+			const platform = this.config.getRegistrationData().platform;
+			console.log(`📦 Selecting ${platform} platform...`);
+			await this.clickPlatformInModal(page, platform);
 
 			// Step 4: Wait for registration form and fill it
 			console.log('📝 Filling registration form...');
@@ -101,6 +99,7 @@ export class DaVinciDownloader {
 			linux: 'linux',
 			mac: 'mac',
 			windows: 'windows',
+			winarm: 'winarm',
 		};
 		const platformKey = platformMap[platform] ?? 'linux';
 

@@ -1,7 +1,7 @@
-import type { DownloadConfig, Platform, RegistrationData } from '@/config/types.ts';
-import { ValidationService } from '@/validation/ValidationService.ts';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import type { DownloadConfig, Platform, RegistrationData } from '@/config/types.ts';
+import { ValidationService } from '@/validation/ValidationService.ts';
 
 export class ConfigManager {
 	private readonly registrationData: RegistrationData;
@@ -36,7 +36,8 @@ export class ConfigManager {
 				this.downloadConfig.outputDir = v;
 			},
 			'--platform': (v) => {
-				if (['linux', 'mac', 'windows'].includes(v)) {
+				const valid: readonly string[] = ['linux', 'mac', 'windows', 'winarm'] satisfies Platform[];
+				if (valid.includes(v)) {
 					this.registrationData.platform = v as Platform;
 				} else {
 					console.warn(`⚠️ Unknown platform: ${v}`);
@@ -170,9 +171,17 @@ export class ConfigManager {
 	}
 
 	private autodetectPlatform(): Platform {
-		const p = process.platform;
-		if (p === 'darwin') return 'mac';
-		if (p === 'win32') return 'windows';
+		const os = process.platform;
+		const arch = process.arch;
+		const arm = arch === 'arm64' || arch === 'arm';
+
+		if (os === 'darwin') return 'mac'; // BMD ships universal binary
+		if (os === 'win32') return arm ? 'winarm' : 'windows';
+
+		// BMD has no ARM Linux build — warn but fall back to x86_64
+		if (arm) {
+			console.warn(`⚠️ Detected Linux ${arch}; BMD only offers x86_64 — selecting linux anyway`);
+		}
 		return 'linux';
 	}
 
@@ -203,7 +212,7 @@ DaVinci Resolve Downloader
 Options:
   -t, --test           Run in test mode (no actual download)
   -o, --output <dir>   Download directory (default: ~/Downloads)
-  --platform <p>       linux | mac | windows (default: autodetect)
+  --platform <p>       linux | mac | windows | winarm (default: autodetect)
   --firstname <name>
   --lastname <name>
   --email <email>

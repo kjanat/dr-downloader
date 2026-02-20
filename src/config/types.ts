@@ -12,7 +12,7 @@ export interface RegistrationData {
 	platform: Platform;
 }
 
-export type Platform = 'linux' | 'mac' | 'windows';
+export type Platform = 'linux' | 'mac' | 'windows' | 'winarm';
 
 export interface DownloadConfig {
 	outputDir: string;
