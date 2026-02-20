@@ -1,7 +1,7 @@
+import type { Page } from 'puppeteer';
 import type { RegistrationData } from '@/config/types.ts';
 import { SELECTORS } from '@/constants/selectors.ts';
 import { type ValidationErrors, ValidationService } from '@/validation/ValidationService.ts';
-import type { Page } from 'puppeteer';
 
 export class FormHandler {
 	constructor(private page: Page) {}
@@ -143,6 +143,9 @@ export class FormHandler {
 		const countryValue = data.country.startsWith('string:')
 			? data.country
 			: `string:${data.country.toLowerCase()}`;
+
+		// Wait for AngularJS to populate country options before selecting
+		await this.waitForOptions(SELECTORS.country, 15_000);
 
 		await this.selectByValueOrText(
 			SELECTORS.country,
