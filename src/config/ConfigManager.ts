@@ -1,7 +1,7 @@
+import { type DownloadConfig, isPlatform, type Platform, PLATFORMS, type RegistrationData } from '@/config/types.ts';
+import { ValidationService } from '@/validation/ValidationService.ts';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import type { DownloadConfig, Platform, RegistrationData } from '@/config/types.ts';
-import { ValidationService } from '@/validation/ValidationService.ts';
 
 export class ConfigManager {
 	private readonly registrationData: RegistrationData;
@@ -36,11 +36,10 @@ export class ConfigManager {
 				this.downloadConfig.outputDir = v;
 			},
 			'--platform': (v) => {
-				const valid: readonly string[] = ['linux', 'mac', 'windows', 'winarm'] satisfies Platform[];
-				if (valid.includes(v)) {
-					this.registrationData.platform = v as Platform;
+				if (isPlatform(v)) {
+					this.registrationData.platform = v;
 				} else {
-					console.warn(`⚠️ Unknown platform: ${v}`);
+					console.warn(`⚠️ Unknown platform: ${v}. Valid: ${PLATFORMS.join(', ')}`);
 				}
 			},
 			'--firstname': (v) => this.applyRegistrationArg('--firstname', v),
@@ -167,10 +166,19 @@ export class ConfigManager {
 		if (e.DAVINCI_STREET) envData.street = e.DAVINCI_STREET;
 		if (e.DAVINCI_ZIPCODE) envData.zipcode = e.DAVINCI_ZIPCODE;
 		if (e.DAVINCI_COMPANY) envData.company = e.DAVINCI_COMPANY;
+		if (e.DAVINCI_PLATFORM && isPlatform(e.DAVINCI_PLATFORM)) {
+			envData.platform = e.DAVINCI_PLATFORM;
+		}
 		return envData;
 	}
 
 	private autodetectPlatform(): Platform {
+		// Env var bypass: lets users on unsupported architectures skip autodetection.
+		// Checked here (not just in loadEnvRegistrationData) because autodetect
+		// runs in defaultRegistrationData *before* the env overlay is merged.
+		const envPlatform = process.env.DAVINCI_PLATFORM;
+		if (envPlatform && isPlatform(envPlatform)) return envPlatform;
+
 		const os = process.platform;
 		const arch = process.arch;
 		const arm = arch === 'arm64' || arch === 'arm';
@@ -178,9 +186,13 @@ export class ConfigManager {
 		if (os === 'darwin') return 'mac'; // BMD ships universal binary
 		if (os === 'win32') return arm ? 'winarm' : 'windows';
 
-		// BMD has no ARM Linux build — warn but fall back to x86_64
+		// BMD has no ARM Linux build — fail fast instead of downloading a
+		// multi-GB x86_64 installer that won't execute on ARM.
 		if (arm) {
-			console.warn(`⚠️ Detected Linux ${arch}; BMD only offers x86_64 — selecting linux anyway`);
+			throw new Error(
+				`Detected Linux ${arch} — BMD only ships x86_64 Linux builds. `
+					+ 'Set DAVINCI_PLATFORM=linux to force the x86_64 download.',
+			);
 		}
 		return 'linux';
 	}
@@ -212,7 +224,7 @@ DaVinci Resolve Downloader
 Options:
   -t, --test           Run in test mode (no actual download)
   -o, --output <dir>   Download directory (default: ~/Downloads)
-  --platform <p>       linux | mac | windows | winarm (default: autodetect)
+  --platform <p>       ${PLATFORMS.join(' | ')} (default: autodetect)
   --firstname <name>
   --lastname <name>
   --email <email>
@@ -227,6 +239,7 @@ Options:
   -h, --help           Show this help
 
 Environment Variables:
+  DAVINCI_PLATFORM     Override platform autodetection (${PLATFORMS.join(' | ')})
   DAVINCI_FIRSTNAME, DAVINCI_LASTNAME, DAVINCI_EMAIL, DAVINCI_PHONE
   DAVINCI_COUNTRY, DAVINCI_STATE, DAVINCI_CITY, DAVINCI_STREET
   DAVINCI_ZIPCODE, DAVINCI_COMPANY

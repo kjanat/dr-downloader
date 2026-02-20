@@ -1,4 +1,5 @@
 import { ConfigManager } from '@/config/ConfigManager.ts';
+import { PLATFORMS } from '@/config/types.ts';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 
 describe('ConfigManager', () => {
@@ -147,6 +148,20 @@ describe('ConfigManager', () => {
 			expect(regData.platform).toBe('mac');
 		});
 
+		it('should accept all valid platforms via CLI', () => {
+			for (const platform of PLATFORMS) {
+				const config = new ConfigManager();
+				config.parseCliArgs(['--platform', platform]);
+				expect(config.getRegistrationData().platform).toBe(platform);
+			}
+		});
+
+		it('should accept --platform winarm', () => {
+			const config = new ConfigManager();
+			config.parseCliArgs(['--platform', 'winarm']);
+			expect(config.getRegistrationData().platform).toBe('winarm');
+		});
+
 		it('should warn on invalid platform', () => {
 			const config = new ConfigManager();
 			let warnMessage = '';
@@ -157,7 +172,8 @@ describe('ConfigManager', () => {
 
 			config.parseCliArgs(['--platform', 'invalid']);
 
-			expect(warnMessage).toBe('⚠️ Unknown platform: invalid');
+			expect(warnMessage).toContain('Unknown platform: invalid');
+			expect(warnMessage).toContain('Valid:');
 			console.warn = originalWarn;
 		});
 
@@ -288,6 +304,90 @@ describe('ConfigManager', () => {
 
 			const downloadConfig = config.getDownloadConfig();
 			expect(downloadConfig.testMode).toBe(true);
+		});
+	});
+
+	describe('Platform Autodetection', () => {
+		let originalPlatform: NodeJS.Platform;
+		let originalArch: NodeJS.Architecture;
+
+		beforeEach(() => {
+			originalPlatform = process.platform;
+			originalArch = process.arch;
+		});
+
+		afterEach(() => {
+			Object.defineProperty(process, 'platform', { value: originalPlatform });
+			Object.defineProperty(process, 'arch', { value: originalArch });
+		});
+
+		it('should detect macOS (universal binary) regardless of arch', () => {
+			Object.defineProperty(process, 'platform', { value: 'darwin' });
+			Object.defineProperty(process, 'arch', { value: 'arm64' });
+
+			const config = new ConfigManager();
+			expect(config.getRegistrationData().platform).toBe('mac');
+		});
+
+		it('should detect Windows x86_64', () => {
+			Object.defineProperty(process, 'platform', { value: 'win32' });
+			Object.defineProperty(process, 'arch', { value: 'x64' });
+
+			const config = new ConfigManager();
+			expect(config.getRegistrationData().platform).toBe('windows');
+		});
+
+		it('should detect Windows ARM as winarm', () => {
+			Object.defineProperty(process, 'platform', { value: 'win32' });
+			Object.defineProperty(process, 'arch', { value: 'arm64' });
+
+			const config = new ConfigManager();
+			expect(config.getRegistrationData().platform).toBe('winarm');
+		});
+
+		it('should detect Linux x86_64', () => {
+			Object.defineProperty(process, 'platform', { value: 'linux' });
+			Object.defineProperty(process, 'arch', { value: 'x64' });
+
+			const config = new ConfigManager();
+			expect(config.getRegistrationData().platform).toBe('linux');
+		});
+
+		it('should throw on Linux ARM instead of downloading unusable binary', () => {
+			Object.defineProperty(process, 'platform', { value: 'linux' });
+			Object.defineProperty(process, 'arch', { value: 'arm64' });
+
+			expect(() => new ConfigManager()).toThrow(
+				/Linux arm64.*x86_64.*DAVINCI_PLATFORM=linux/,
+			);
+		});
+
+		it('should guide user toward DAVINCI_PLATFORM env var in ARM error', () => {
+			Object.defineProperty(process, 'platform', { value: 'linux' });
+			Object.defineProperty(process, 'arch', { value: 'arm64' });
+
+			// autodetectPlatform throws during construction — CLI args can't
+			// override because parseCliArgs runs after the constructor.
+			// The env var is the only escape hatch.
+			expect(() => new ConfigManager()).toThrow('DAVINCI_PLATFORM=linux');
+		});
+
+		it('should allow DAVINCI_PLATFORM env var to bypass ARM Linux throw', () => {
+			Object.defineProperty(process, 'platform', { value: 'linux' });
+			Object.defineProperty(process, 'arch', { value: 'arm64' });
+			process.env.DAVINCI_PLATFORM = 'linux';
+
+			const config = new ConfigManager();
+			expect(config.getRegistrationData().platform).toBe('linux');
+		});
+
+		it('should accept --platform linux on x64 Linux', () => {
+			Object.defineProperty(process, 'platform', { value: 'linux' });
+			Object.defineProperty(process, 'arch', { value: 'x64' });
+
+			const config = new ConfigManager();
+			config.parseCliArgs(['--platform', 'linux']);
+			expect(config.getRegistrationData().platform).toBe('linux');
 		});
 	});
 });

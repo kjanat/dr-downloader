@@ -18,5 +18,6 @@ export const SELECTORS = {
 		linux: 'Linux',
 		mac: 'Mac OS X',
 		windows: 'Windows',
+		winarm: 'Windows ARM',
 	},
 } as const;

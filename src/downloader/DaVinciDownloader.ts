@@ -1,8 +1,9 @@
-import type { Page } from 'puppeteer';
 import type { ConfigManager } from '@/config/ConfigManager.ts';
+import type { Platform } from '@/config/types.ts';
 import { FormHandler } from '@/downloader/FormHandler.ts';
 import { StreamDownloader } from '@/downloader/StreamDownloader.ts';
 import { createBrowser, createPage } from '@/utils/browser.ts';
+import type { Page } from 'puppeteer';
 
 export class DaVinciDownloader {
 	private formHandler?: FormHandler;
@@ -91,21 +92,34 @@ export class DaVinciDownloader {
 
 	private async clickPlatformInModal(
 		page: Page,
-		platform: string,
+		platform: Platform,
 	): Promise<void> {
 		// BMD platform links are <a ng-click="downloadLatestStable('davinci-resolve', 'linux')">
 		// We must click the exact <a> element so Angular's ng-click fires.
-		const platformMap: Record<string, string> = {
+		// Map is typed Record<Platform, string> so compiler enforces exhaustiveness —
+		// adding a Platform variant without a mapping entry is a compile error.
+		const platformMap: Record<Platform, string> = {
 			linux: 'linux',
 			mac: 'mac',
 			windows: 'windows',
 			winarm: 'winarm',
 		};
-		const platformKey = platformMap[platform] ?? 'linux';
+		const platformKey = platformMap[platform];
 
 		// Build selector targeting the free (non-studio) download link
 		const selector = `a[ng-click="downloadLatestStable('davinci-resolve', '${platformKey}')"]`;
-		await page.waitForSelector(selector, { timeout: 15_000 });
+
+		// Pre-check: BMD conditionally renders platform links via ng-if.
+		// If the platform isn't available for this release, fail fast with
+		// a descriptive message instead of a generic Puppeteer TimeoutError.
+		const element = await page.$(selector);
+		if (!element) {
+			throw new Error(
+				`Platform '${platform}' is not available for download. `
+					+ `The BMD website may not offer this platform for the current DaVinci Resolve release.`,
+			);
+		}
+
 		// Use page.click() for real mouse events — DOM .click() doesn't trigger ng-click reliably
 		await page.click(selector);
 
