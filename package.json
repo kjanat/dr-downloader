@@ -13,12 +13,12 @@
 	},
 	"scripts": {
 		"build": "bun build src/main.ts --format esm --target node --outdir dist --minify",
-		"dev": "bun --watch src/main.ts",
 		"fake": "bun run src/main.ts --test",
 		"format": "dprint fmt .",
 		"postinstall": "puppeteer browsers install chrome",
 		"lint": "biome lint",
 		"lint:fix": "biome lint --write",
+		"prepublish": "bun run build",
 		"start": "bun run src/main.ts",
 		"typecheck": "tsgo --noEmit"
 	},
