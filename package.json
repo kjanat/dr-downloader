@@ -5,6 +5,7 @@
 		"type": "git",
 		"url": "git+https://github.com/kjanat/dr-downloader.git"
 	},
+	"license": "MIT",
 	"type": "module",
 	"module": "src/main.ts",
 	"bin": {
