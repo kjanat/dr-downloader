@@ -1,7 +1,7 @@
 import type { Page } from 'puppeteer';
-import type { RegistrationData } from '../config/types.ts';
-import { SELECTORS } from '../constants/selectors.ts';
-import { type ValidationErrors, ValidationService } from '../validation/ValidationService.ts';
+import type { RegistrationData } from '@/config/types.ts';
+import { SELECTORS } from '@/constants/selectors.ts';
+import { type ValidationErrors, ValidationService } from '@/validation/ValidationService.ts';
 
 export class FormHandler {
 	constructor(private page: Page) {}
@@ -45,6 +45,7 @@ export class FormHandler {
 	validateField(
 		fieldName: string,
 		value: string,
+		// biome-ignore lint/suspicious/noExplicitAny: explanation
 		context?: any,
 	): { isValid: boolean; error?: string } {
 		switch (fieldName) {

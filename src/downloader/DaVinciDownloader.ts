@@ -1,8 +1,8 @@
+import type { Page } from 'puppeteer';
 import type { ConfigManager } from '@/config/ConfigManager.ts';
 import { FormHandler } from '@/downloader/FormHandler.ts';
 import { StreamDownloader } from '@/downloader/StreamDownloader.ts';
 import { createBrowser, createPage } from '@/utils/browser.ts';
-import type { Page } from 'puppeteer';
 
 export class DaVinciDownloader {
 	private formHandler?: FormHandler;

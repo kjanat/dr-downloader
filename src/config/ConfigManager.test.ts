@@ -1,5 +1,5 @@
-import { ConfigManager } from '@/config/ConfigManager.ts';
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { ConfigManager } from '@/config/ConfigManager.ts';
 
 describe('ConfigManager', () => {
 	let originalEnv: NodeJS.ProcessEnv;
