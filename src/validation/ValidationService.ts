@@ -274,14 +274,14 @@ export class ValidationService {
 	 * Mirrors Angular's $isEmpty() function behavior
 	 * Checks for undefined, null, empty string, or whitespace-only string
 	 */
-		private static isEmpty(value: unknown): boolean {
-			return (
-				value === undefined ||
-				value === null ||
-				value === '' ||
-				(typeof value === 'string' && value.trim() === '')
-			);
-		}
+	private static isEmpty(value: unknown): boolean {
+		return (
+			value === undefined
+			|| value === null
+			|| value === ''
+			|| (typeof value === 'string' && value.trim() === '')
+		);
+	}
 
 	/**
 	 * Determines if a country requires state/province selection

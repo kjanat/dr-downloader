@@ -1,8 +1,8 @@
-import type { Page } from 'puppeteer';
 import type { ConfigManager } from '@/config/ConfigManager.ts';
 import { FormHandler } from '@/downloader/FormHandler.ts';
 import { StreamDownloader } from '@/downloader/StreamDownloader.ts';
 import { createBrowser, createPage } from '@/utils/browser.ts';
+import type { Page } from 'puppeteer';
 
 export class DaVinciDownloader {
 	private formHandler?: FormHandler;
@@ -112,8 +112,7 @@ export class DaVinciDownloader {
 		// The modal contains links/buttons for each OS. We need to find the Linux one
 		// under the FREE (non-Studio) section.
 
-		const platformName =
-			platform === 'linux' ? 'Linux' : platform === 'mac' ? 'Mac' : 'Windows';
+		const platformName = platform === 'linux' ? 'Linux' : platform === 'mac' ? 'Mac' : 'Windows';
 
 		await page.waitForFunction(
 			(name) => {
@@ -211,10 +210,10 @@ export class DaVinciDownloader {
 			);
 			const btn = buttons.find((el) =>
 				/register.*download|download.*register/i.test(
-					(el.textContent || '') +
-						' ' +
-						((el as HTMLElement).getAttribute('value') || ''),
-				),
+					(el.textContent || '')
+						+ ' '
+						+ ((el as HTMLElement).getAttribute('value') || ''),
+				)
 			);
 			if (btn) (btn as HTMLElement).click();
 		});

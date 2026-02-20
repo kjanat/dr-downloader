@@ -1,10 +1,7 @@
 import type { Page } from 'puppeteer';
 import type { RegistrationData } from '../config/types.ts';
 import { SELECTORS } from '../constants/selectors.ts';
-import {
-	type ValidationErrors,
-	ValidationService,
-} from '../validation/ValidationService.ts';
+import { type ValidationErrors, ValidationService } from '../validation/ValidationService.ts';
 
 export class FormHandler {
 	constructor(private page: Page) {}
@@ -88,13 +85,14 @@ export class FormHandler {
 					const labs = Array.from(document.querySelectorAll('label'));
 					const match = labs.find(
 						(el) =>
-							(el.textContent || '').trim().toLowerCase() ===
-							label.toLowerCase(),
+							(el.textContent || '').trim().toLowerCase()
+								=== label.toLowerCase(),
 					);
 					if (!match) return null;
 					const forId = match.getAttribute('for');
-					if (forId)
+					if (forId) {
 						return document.getElementById(forId) as HTMLInputElement | null;
+					}
 					return (
 						(match.querySelector(
 							'input,textarea',
@@ -102,9 +100,8 @@ export class FormHandler {
 					);
 				};
 
-				const input =
-					findByLabel() ||
-					(document.querySelector(sel) as HTMLInputElement | null);
+				const input = findByLabel()
+					|| (document.querySelector(sel) as HTMLInputElement | null);
 				if (!input) return false;
 
 				input.focus();

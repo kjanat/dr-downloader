@@ -1,7 +1,7 @@
+import { formatFileSize } from '@/utils/formatters.ts';
 import { createWriteStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import { formatFileSize } from '@/utils/formatters.ts';
 
 // biome-ignore lint/complexity/noStaticOnlyClass: utility class
 export class StreamDownloader {
@@ -56,10 +56,9 @@ export class StreamDownloader {
 				const now = Date.now();
 				if (now - lastLogTime > logInterval) {
 					lastLogTime = now;
-					const pct =
-						contentLength > 0
-							? ` (${((downloaded / contentLength) * 100).toFixed(1)}%)`
-							: '';
+					const pct = contentLength > 0
+						? ` (${((downloaded / contentLength) * 100).toFixed(1)}%)`
+						: '';
 					console.log(`📥 Downloaded: ${formatFileSize(downloaded)}${pct}`);
 				}
 			}

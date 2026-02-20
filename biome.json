@@ -10,10 +10,10 @@
 		"ignoreUnknown": false
 	},
 	"formatter": {
-		"enabled": true,
+		"enabled": false,
 		"indentStyle": "tab",
 		"indentWidth": 2,
-		"lineWidth": 80
+		"lineWidth": 100
 	},
 	"linter": {
 		"enabled": true,
@@ -39,6 +39,11 @@
 				"organizeImports": "on"
 			}
 		}
+	},
+	"json": {
+		"parser": { "allowTrailingCommas": false },
+		"formatter": { "trailingCommas": "none" },
+		"linter": { "enabled": false }
 	},
 	"overrides": [
 		{

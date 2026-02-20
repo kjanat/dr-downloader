@@ -216,21 +216,21 @@ fi
 
 ## Available Scripts
 
-| Script       | Description                    | Usage                |
-|--------------|--------------------------------|----------------------|
-| `start`      | Run production mode           | `bun run start`      |
-| `fake`       | Run test mode with mock data  | `bun run fake`       |
-| `dev`        | Run with file watching        | `bun run dev`        |
-| `format`     | Format code with Biome        | `bun run format`     |
-| `lint`       | Check code quality            | `bun run lint`       |
-| `lint:fix`   | Auto-fix linting issues       | `bun run lint:fix`   |
+| Script     | Description                  | Usage              |
+| ---------- | ---------------------------- | ------------------ |
+| `start`    | Run production mode          | `bun run start`    |
+| `fake`     | Run test mode with mock data | `bun run fake`     |
+| `dev`      | Run with file watching       | `bun run dev`      |
+| `format`   | Format code with Biome       | `bun run format`   |
+| `lint`     | Check code quality           | `bun run lint`     |
+| `lint:fix` | Auto-fix linting issues      | `bun run lint:fix` |
 
 ## Supported AUR Helpers
 
 The tool auto-detects cache directories for:
 
 - yay
-- paru  
+- paru
 - aurutils
 - pikaur
 - aura

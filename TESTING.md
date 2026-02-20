@@ -137,14 +137,14 @@ bun run lint
 
 ### Available Scripts
 
-| Script       | Description                     | Usage                |
-|--------------|---------------------------------|----------------------|
-| `test`       | Run all test suites            | `bun test`           |
-| `fake`       | Run with mock credentials       | `bun run fake`       |
-| `dev`        | Development mode with watching  | `bun run dev`        |
-| `lint`       | Code quality checks             | `bun run lint`       |
-| `lint:fix`   | Auto-fix linting issues        | `bun run lint:fix`   |
-| `format`     | Format code with Biome          | `bun run format`     |
+| Script     | Description                    | Usage              |
+| ---------- | ------------------------------ | ------------------ |
+| `test`     | Run all test suites            | `bun test`         |
+| `fake`     | Run with mock credentials      | `bun run fake`     |
+| `dev`      | Development mode with watching | `bun run dev`      |
+| `lint`     | Code quality checks            | `bun run lint`     |
+| `lint:fix` | Auto-fix linting issues        | `bun run lint:fix` |
+| `format`   | Format code with Biome         | `bun run format`   |
 
 ## Test Configuration
 
@@ -152,13 +152,13 @@ bun run lint
 
 ```json
 {
-  "compilerOptions": {
-    "strict": true,
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "types": ["bun-types", "node"]
-  }
+	"compilerOptions": {
+		"strict": true,
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"types": ["bun-types", "node"]
+	}
 }
 ```
 
@@ -166,20 +166,20 @@ bun run lint
 
 ```json
 {
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "suspicious": {
-        "noExplicitAny": "error"
-      }
-    }
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "tab",
-    "lineWidth": 80
-  }
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"suspicious": {
+				"noExplicitAny": "error"
+			}
+		}
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"lineWidth": 80
+	}
 }
 ```
 
@@ -194,10 +194,10 @@ The application includes a comprehensive test mode:
 const testMode = process.argv.includes('--test');
 
 if (testMode) {
-  console.log('🧪 Running in test mode with mock credentials');
-  // Uses predefined test data
-  // Shows detailed logging
-  // Captures URLs without downloading
+	console.log('🧪 Running in test mode with mock credentials');
+	// Uses predefined test data
+	// Shows detailed logging
+	// Captures URLs without downloading
 }
 ```
 
@@ -206,19 +206,19 @@ if (testMode) {
 ```typescript
 // Example browser test
 describe('DaVinci Resolve Downloader', () => {
-  it('should fill form correctly', async () => {
-    const browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
+	it('should fill form correctly', async () => {
+		const browser = await puppeteer.launch({ headless: true });
+		const page = await browser.newPage();
 
-    // Test form filling logic
-    await page.goto('https://www.blackmagicdesign.com/event/davinciresolvedownload');
+		// Test form filling logic
+		await page.goto('https://www.blackmagicdesign.com/event/davinciresolvedownload');
 
-    // Verify form elements
-    expect(await page.$('#country')).toBeTruthy();
-    expect(await page.$('#state')).toBeTruthy();
+		// Verify form elements
+		expect(await page.$('#country')).toBeTruthy();
+		expect(await page.$('#state')).toBeTruthy();
 
-    await browser.close();
-  });
+		await browser.close();
+	});
 });
 ```
 
@@ -227,20 +227,20 @@ describe('DaVinci Resolve Downloader', () => {
 ```typescript
 // Example network monitoring test
 it('should capture download URL', async () => {
-  const capturedUrls: string[] = [];
+	const capturedUrls: string[] = [];
 
-  page.on('request', (request) => {
-    const url = request.url();
-    if (url.includes('swr.cloud.blackmagicdesign.com')) {
-      capturedUrls.push(url);
-    }
-  });
+	page.on('request', (request) => {
+		const url = request.url();
+		if (url.includes('swr.cloud.blackmagicdesign.com')) {
+			capturedUrls.push(url);
+		}
+	});
 
-  // Trigger download process
-  await clickDownloadButton();
+	// Trigger download process
+	await clickDownloadButton();
 
-  expect(capturedUrls.length).toBeGreaterThan(0);
-  expect(capturedUrls[0]).toContain('DaVinci_Resolve');
+	expect(capturedUrls.length).toBeGreaterThan(0);
+	expect(capturedUrls[0]).toContain('DaVinci_Resolve');
 });
 ```
 
@@ -252,15 +252,15 @@ The application uses safe mock credentials for testing:
 
 ```typescript
 const testFormData = {
-  firstname: 'Test',
-  lastname: 'User',
-  email: 'test@example.com',
-  phone: '555-123-4567',
-  country: 'us',
-  state: 'string:New York',
-  city: 'Test City',
-  street: 'Test Street',
-  zipcode: '12345'
+	firstname: 'Test',
+	lastname: 'User',
+	email: 'test@example.com',
+	phone: '555-123-4567',
+	country: 'us',
+	state: 'string:New York',
+	city: 'Test City',
+	street: 'Test Street',
+	zipcode: '12345',
 };
 ```
 
@@ -326,9 +326,9 @@ HEADLESS=false bun run fake
 ```typescript
 // Launch browser with DevTools
 const browser = await puppeteer.launch({
-  headless: false,
-  devtools: true,
-  slowMo: 100 // Slow down for debugging
+	headless: false,
+	devtools: true,
+	slowMo: 100, // Slow down for debugging
 });
 ```
 
@@ -337,11 +337,11 @@ const browser = await puppeteer.launch({
 ```typescript
 // Log all network requests
 page.on('request', (request) => {
-  console.log(`→ ${request.method()} ${request.url()}`);
+	console.log(`→ ${request.method()} ${request.url()}`);
 });
 
 page.on('response', (response) => {
-  console.log(`← ${response.status()} ${response.url()}`);
+	console.log(`← ${response.status()} ${response.url()}`);
 });
 ```
 

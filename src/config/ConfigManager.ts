@@ -1,8 +1,4 @@
-import type {
-	DownloadConfig,
-	Platform,
-	RegistrationData,
-} from '@/config/types.ts';
+import type { DownloadConfig, Platform, RegistrationData } from '@/config/types.ts';
 import { ValidationService } from '@/validation/ValidationService.ts';
 
 export class ConfigManager {
@@ -132,10 +128,9 @@ export class ConfigManager {
 		return {
 			outputDir: process.env.DEFAULT_OUTPUT_PATH || './downloads',
 			testMode: false,
-			timeout:
-				Number.isFinite(timeoutEnv) && timeoutEnv > 0
-					? timeoutEnv
-					: 15 * 60 * 1000,
+			timeout: Number.isFinite(timeoutEnv) && timeoutEnv > 0
+				? timeoutEnv
+				: 15 * 60 * 1000,
 			retryAttempts: Number.isFinite(retryEnv) && retryEnv > 0 ? retryEnv : 3,
 		};
 	}
