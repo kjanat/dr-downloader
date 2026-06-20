@@ -1,6 +1,6 @@
 import type { DownloadConfig, Platform, RegistrationData } from '#config/types';
 import { FormHandler } from '#downloader/FormHandler';
-import { StreamDownloader } from '#downloader/StreamDownloader';
+import { download } from '#downloader/StreamDownloader';
 import { createBrowser, createPage } from '#utils/browser';
 import type { Out, SpinnerHandle } from '@kjanat/dreamcli';
 import { osc8, visibleWidth } from '@kjanat/dreamcli';
@@ -75,7 +75,7 @@ export class DaVinciDownloader {
 
 				if (downloadUrl) {
 					this.out.log(this.capturedUrlLine(downloadUrl));
-					await StreamDownloader.download(downloadUrl, this.downloadConfig.outputDir, this.out);
+					await download(downloadUrl, this.downloadConfig.outputDir, this.out);
 				} else {
 					throw new Error('Failed to capture download URL from CDN redirect');
 				}
