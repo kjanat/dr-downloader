@@ -1,6 +1,6 @@
 {
 	"name": "davinci-resolve-downloader",
-	"version": "1.0.0-alpha.2",
+	"version": "1.0.0-alpha.3",
 	"description": "Download the free edition of DaVinci Resolve from Blackmagic Design",
 	"keywords": ["davinci resolve", "download", "dreamcli"],
 	"bugs": { "url": "https://github.com/kjanat/dr-downloader/issues" },

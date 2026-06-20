@@ -2,7 +2,10 @@
 ---
 name: Download davinci-resolve with Puppeteer
 on: { workflow_dispatch: {} }
+
 concurrency: { group: "puppeteer-${{ github.ref_name }}", cancel-in-progress: true }
+permissions: { contents: read }
+
 jobs:
   download:
     timeout-minutes: 60

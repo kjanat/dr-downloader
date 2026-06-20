@@ -7,6 +7,27 @@ import { osc8, visibleWidth } from '@kjanat/dreamcli';
 import { exit, stdout } from 'node:process';
 import type { Page } from 'puppeteer';
 
+/** The Blackmagic Design CDN host that serves the actual installer download. */
+const CDN_DOWNLOAD_HOST = 'swr.cloud.blackmagicdesign.com';
+
+/**
+ * Whether `url` points at the BMD download CDN — matched on the parsed host
+ * (the exact host or a subdomain of it), not a raw substring. A bare
+ * `url.includes(host)` would also accept a lookalike like
+ * `swr.cloud.blackmagicdesign.com.evil.com` or any URL with the host in a query
+ * string, and the captured URL is streamed via `fetch`, so this guards what we
+ * actually download. Returns false for unparseable input.
+ */
+export function isCdnDownloadUrl(url: string): boolean {
+	let host: string;
+	try {
+		host = new URL(url).hostname;
+	} catch {
+		return false;
+	}
+	return host === CDN_DOWNLOAD_HOST || host.endsWith(`.${CDN_DOWNLOAD_HOST}`);
+}
+
 export class DaVinciDownloader {
 	private formHandler?: FormHandler;
 
@@ -250,7 +271,7 @@ export class DaVinciDownloader {
 
 			page.on('request', (request) => {
 				const url = request.url();
-				if (url.includes('swr.cloud.blackmagicdesign.com')) {
+				if (isCdnDownloadUrl(url)) {
 					clearTimeout(timeout);
 					request.abort().catch(() => {});
 					resolve(url);
@@ -262,7 +283,7 @@ export class DaVinciDownloader {
 			// Redundant safety: also capture from response in case abort races
 			page.on('response', (response) => {
 				const url = response.url();
-				if (url.includes('swr.cloud.blackmagicdesign.com')) {
+				if (isCdnDownloadUrl(url)) {
 					clearTimeout(timeout);
 					resolve(url);
 				}
