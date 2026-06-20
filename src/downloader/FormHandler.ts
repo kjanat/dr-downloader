@@ -1,7 +1,8 @@
+import type { RegistrationData } from '#config/types';
+import { SELECTORS } from '#constants/selectors';
+import { type ValidationErrors, ValidationService } from '#validation/ValidationService';
+import { log, warn } from 'node:console';
 import type { Page } from 'puppeteer';
-import type { RegistrationData } from '@/config/types.ts';
-import { SELECTORS } from '@/constants/selectors.ts';
-import { type ValidationErrors, ValidationService } from '@/validation/ValidationService.ts';
 
 export class FormHandler {
 	constructor(private page: Page) {}
@@ -90,19 +91,11 @@ export class FormHandler {
 				const findByLabel = () => {
 					const labs = Array.from(document.querySelectorAll('label'));
 					const norm = (s: string) => s.replace(/[*:\s]+$/g, '').trim().toLowerCase();
-					const match = labs.find(
-						(el) => norm(el.textContent || '') === norm(label),
-					);
+					const match = labs.find((el) => norm(el.textContent || '') === norm(label));
 					if (!match) return null;
 					const forId = match.getAttribute('for');
-					if (forId) {
-						return document.getElementById(forId) as HTMLInputElement | null;
-					}
-					return (
-						(match.querySelector(
-							'input,textarea',
-						) as HTMLInputElement | null) || null
-					);
+					if (forId) return document.getElementById(forId) as HTMLInputElement | null;
+					return ((match.querySelector('input,textarea') as HTMLInputElement | null) || null);
 				};
 
 				const input = findByLabel()
@@ -121,18 +114,12 @@ export class FormHandler {
 		);
 
 		if (!ok) {
-			console.warn(
-				`Could not find input for "${labelText}" / ${idSelector}, continuing...`,
-			);
+			warn(`Could not find input for "${labelText}" / ${idSelector}, continuing...`);
 		}
 	}
 
 	private async fillAddress(data: RegistrationData): Promise<void> {
-		await this.typeByLabelOrId(
-			'Company',
-			SELECTORS.company,
-			data.company ?? '',
-		);
+		await this.typeByLabelOrId('Company', SELECTORS.company, data.company ?? '');
 		await this.typeByLabelOrId('Street', SELECTORS.street, data.street);
 		await this.typeByLabelOrId('City', SELECTORS.city, data.city);
 		await this.typeByLabelOrId('Zip', SELECTORS.zipcode, data.zipcode);
@@ -147,19 +134,13 @@ export class FormHandler {
 		// Wait for AngularJS to populate country options before selecting
 		await this.waitForOptions(SELECTORS.country, 15_000);
 
-		await this.selectByValueOrText(
-			SELECTORS.country,
-			countryValue,
-			this.countryTextGuess(data.country),
-		);
+		await this.selectByValueOrText(SELECTORS.country, countryValue, this.countryTextGuess(data.country));
 
 		// Wait for state options to populate (triggered by country change)
 		try {
 			await this.waitForOptions(SELECTORS.state, 15_000);
 		} catch {
-			console.log(
-				'ℹ️ No state options loaded (may not be required for this country)',
-			);
+			log('ℹ️ No state options loaded (may not be required for this country)');
 			return;
 		}
 
@@ -212,9 +193,7 @@ export class FormHandler {
 		);
 
 		if (!byText) {
-			console.warn(
-				`Could not select ${selector} (${preferredValue} / ${fallbackText})`,
-			);
+			warn(`Could not select ${selector} (${preferredValue} / ${fallbackText})`);
 		}
 	}
 

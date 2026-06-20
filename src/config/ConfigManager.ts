@@ -1,13 +1,38 @@
+import type { DownloadConfig, Platform, RegistrationData } from '#config/types';
+import { isPlatform, PLATFORMS } from '#config/types';
+import { ValidationService } from '#validation/ValidationService';
+import { error, log, warn } from 'node:console';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { type DownloadConfig, isPlatform, PLATFORMS, type Platform, type RegistrationData } from '@/config/types.ts';
-import { ValidationService } from '@/validation/ValidationService.ts';
+import { arch, env, exit, platform } from 'node:process';
+
+interface ConfigRuntime {
+	env: NodeJS.ProcessEnv;
+	arch: NodeJS.Architecture;
+	platform: NodeJS.Platform;
+	exit: typeof exit;
+	log: typeof log;
+	warn: typeof warn;
+	error: typeof error;
+}
+
+const DEFAULT_RUNTIME: ConfigRuntime = {
+	env,
+	arch,
+	platform,
+	exit,
+	log,
+	warn,
+	error,
+};
 
 export class ConfigManager {
 	private readonly registrationData: RegistrationData;
 	private readonly downloadConfig: DownloadConfig;
+	private readonly runtime: ConfigRuntime;
 
-	constructor() {
+	constructor(runtime: ConfigRuntime = DEFAULT_RUNTIME) {
+		this.runtime = runtime;
 		this.registrationData = this.loadRegistrationData();
 		this.downloadConfig = this.loadDownloadConfig();
 
@@ -39,11 +64,8 @@ export class ConfigManager {
 				this.downloadConfig.outputDir = v;
 			},
 			'--platform': (v) => {
-				if (isPlatform(v)) {
-					this.registrationData.platform = v;
-				} else {
-					console.warn(`⚠️ Unknown platform: ${v}. Valid: ${PLATFORMS.join(', ')}`);
-				}
+				if (isPlatform(v)) this.registrationData.platform = v;
+				else this.runtime.warn(`⚠️ Unknown platform: ${v}. Valid: ${PLATFORMS.join(', ')}`);
 			},
 			'--firstname': (v) => this.applyRegistrationArg('--firstname', v),
 			'--lastname': (v) => this.applyRegistrationArg('--lastname', v),
@@ -67,7 +89,7 @@ export class ConfigManager {
 		// Handle help flags
 		if (arg === '--help' || arg === '-h') {
 			this.printHelp();
-			process.exit(0);
+			this.runtime.exit(0);
 		}
 
 		// Handle validate-only flag
@@ -91,14 +113,10 @@ export class ConfigManager {
 
 		// Handle key-value arguments
 		const handler = kvHandlers[arg];
-		if (handler) {
-			return this.processKeyValueArg(handler, next, arg);
-		}
+		if (handler) return this.processKeyValueArg(handler, next, arg);
 
 		// Handle unknown arguments
-		if (arg.startsWith('--')) {
-			console.warn(`⚠️ Unknown or malformed argument: ${arg}`);
-		}
+		if (arg.startsWith('--')) this.runtime.warn(`⚠️ Unknown or malformed argument: ${arg}`);
 
 		return 0;
 	}
@@ -112,7 +130,7 @@ export class ConfigManager {
 			handler(next);
 			return 1; // Skip next argument as it was consumed
 		} else {
-			console.warn(`⚠️ Missing value for ${arg}`);
+			this.runtime.warn(`⚠️ Missing value for ${arg}`);
 			return 0;
 		}
 	}
@@ -134,11 +152,11 @@ export class ConfigManager {
 	}
 
 	private loadDownloadConfig(): DownloadConfig {
-		const timeoutEnv = Number(process.env.DOWNLOAD_TIMEOUT_MS);
-		const retryEnv = Number(process.env.RETRY_ATTEMPTS);
+		const timeoutEnv = Number(this.runtime.env.DOWNLOAD_TIMEOUT_MS);
+		const retryEnv = Number(this.runtime.env.RETRY_ATTEMPTS);
 
 		return {
-			outputDir: process.env.DEFAULT_OUTPUT_PATH || join(homedir(), 'Downloads'),
+			outputDir: this.runtime.env.DEFAULT_OUTPUT_PATH || join(homedir(), 'Downloads'),
 			testMode: false,
 			timeout: Number.isFinite(timeoutEnv) && timeoutEnv > 0
 				? timeoutEnv
@@ -164,7 +182,7 @@ export class ConfigManager {
 	}
 
 	private loadEnvRegistrationData(): Partial<RegistrationData> {
-		const e = process.env;
+		const e = this.runtime.env;
 		const envData: Partial<RegistrationData> = {};
 		if (e.DAVINCI_FIRSTNAME) envData.firstname = e.DAVINCI_FIRSTNAME;
 		if (e.DAVINCI_LASTNAME) envData.lastname = e.DAVINCI_LASTNAME;
@@ -186,21 +204,19 @@ export class ConfigManager {
 		// Env var bypass: lets users on unsupported architectures skip autodetection.
 		// Checked here (not just in loadEnvRegistrationData) because autodetect
 		// runs in defaultRegistrationData *before* the env overlay is merged.
-		const envPlatform = process.env.DAVINCI_PLATFORM;
+		const envPlatform = this.runtime.env.DAVINCI_PLATFORM;
 		if (envPlatform && isPlatform(envPlatform)) return envPlatform;
 
-		const os = process.platform;
-		const arch = process.arch;
-		const arm = arch === 'arm64' || arch === 'arm';
+		const arm = this.runtime.arch === 'arm64' || this.runtime.arch === 'arm';
 
-		if (os === 'darwin') return 'mac'; // BMD ships universal binary
-		if (os === 'win32') return arm ? 'winarm' : 'windows';
+		if (this.runtime.platform === 'darwin') return 'mac'; // BMD ships universal binary
+		if (this.runtime.platform === 'win32') return arm ? 'winarm' : 'windows';
 
 		// BMD has no ARM Linux build — fail fast instead of downloading a
 		// multi-GB x86_64 installer that won't execute on ARM.
 		if (arm) {
 			throw new Error(
-				`Detected Linux ${arch} — BMD only ships x86_64 Linux builds. `
+				`Detected Linux ${this.runtime.arch} — BMD only ships x86_64 Linux builds. `
 					+ 'Set DAVINCI_PLATFORM=linux to force the x86_64 download.',
 			);
 		}
@@ -228,7 +244,7 @@ export class ConfigManager {
 	}
 
 	private printHelp(): void {
-		console.log(`
+		this.runtime.log(`\
 DaVinci Resolve Downloader
 
 Options:
@@ -271,15 +287,13 @@ Environment Variables:
 				.map(([field, error]) => `  ${field}: ${error}`)
 				.join('\n');
 
-			console.error(`❌ Configuration validation failed:\n${errors}\n`);
-			console.error(`💡 Fix these issues by:\n`);
-			console.error(`   • Setting environment variables (DAVINCI_*)`);
-			console.error(
-				`   • Using command line arguments (--firstname, --email, etc.)`,
-			);
-			console.error(`   • Run with --validate-only to test your configuration`);
+			this.runtime.error(`❌ Configuration validation failed:\n${errors}\n`);
+			this.runtime.error(`💡 Fix these issues by:\n`);
+			this.runtime.error(`   • Setting environment variables (DAVINCI_*)`);
+			this.runtime.error(`   • Using command line arguments (--firstname, --email, etc.)`);
+			this.runtime.error(`   • Run with --validate-only to test your configuration`);
 
-			process.exit(1);
+			this.runtime.exit(1);
 		}
 	}
 
@@ -288,57 +302,47 @@ Environment Variables:
 	 * Used with --validate-only flag
 	 */
 	private validateAndExit(): void {
-		console.log('🔍 Validating configuration...\n');
+		this.runtime.log('🔍 Validating configuration...\n');
 
-		const validationResult = ValidationService.validateRegistrationData(
-			this.registrationData,
-		);
+		const validationResult = ValidationService.validateRegistrationData(this.registrationData);
 
 		if (validationResult.isValid) {
-			console.log('✅ Configuration is valid!\n');
-			console.log('📋 Registration Data:');
-			console.log(
-				`   Name: ${this.registrationData.firstname} ${this.registrationData.lastname}`,
-			);
-			console.log(`   Email: ${this.registrationData.email}`);
-			console.log(
-				`   Phone: ${this.registrationData.phone || '(not provided)'}`,
-			);
-			console.log(`   Country: ${this.registrationData.country}`);
-			console.log(
-				`   State: ${this.registrationData.state || '(not required)'}`,
-			);
-			console.log(`   City: ${this.registrationData.city}`);
-			console.log(`   Address: ${this.registrationData.street}`);
-			console.log(`   Zipcode: ${this.registrationData.zipcode}`);
-			console.log(
-				`   Company: ${this.registrationData.company || '(not provided)'}`,
-			);
-			console.log(`   Platform: ${this.registrationData.platform}`);
+			this.runtime.log('✅ Configuration is valid!\n');
+			this.runtime.log('📋 Registration Data:');
+			this.runtime.log(`   Name: ${this.registrationData.firstname} ${this.registrationData.lastname}`);
+			this.runtime.log(`   Email: ${this.registrationData.email}`);
+			this.runtime.log(`   Phone: ${this.registrationData.phone || '(not provided)'}`);
+			this.runtime.log(`   Country: ${this.registrationData.country}`);
+			this.runtime.log(`   State: ${this.registrationData.state || '(not required)'}`);
+			this.runtime.log(`   City: ${this.registrationData.city}`);
+			this.runtime.log(`   Address: ${this.registrationData.street}`);
+			this.runtime.log(`   Zipcode: ${this.registrationData.zipcode}`);
+			this.runtime.log(`   Company: ${this.registrationData.company || '(not provided)'}`);
+			this.runtime.log(`   Platform: ${this.registrationData.platform}`);
 
-			process.exit(0);
+			this.runtime.exit(0);
 		} else {
-			console.log('❌ Configuration validation failed:\n');
+			this.runtime.log('❌ Configuration validation failed:\n');
 
 			const errors = Object.entries(validationResult.errors)
 				.map(([field, error]) => `   ${field}: ${error}`)
 				.join('\n');
 
-			console.log(`${errors}\n`);
+			this.runtime.log(`${errors}\n`);
 
-			console.log('💡 Fix these issues by:');
-			console.log('   • Setting environment variables:');
+			this.runtime.log('💡 Fix these issues by:');
+			this.runtime.log('   • Setting environment variables:');
 			Object.keys(validationResult.errors).forEach((field) => {
 				const envVar = `DAVINCI_${field.toUpperCase()}`;
-				console.log(`     export ${envVar}="your_value"`);
+				this.runtime.log(`     export ${envVar}="your_value"`);
 			});
 
-			console.log('   • Or using command line arguments:');
+			this.runtime.log('   • Or using command line arguments:');
 			Object.keys(validationResult.errors).forEach((field) => {
-				console.log(`     --${field} "your_value"`);
+				this.runtime.log(`     --${field} "your_value"`);
 			});
 
-			process.exit(1);
+			this.runtime.exit(1);
 		}
 	}
 }

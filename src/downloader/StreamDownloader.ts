@@ -1,4 +1,5 @@
-import { formatFileSize } from '@/utils/formatters.ts';
+import { formatFileSize } from '#utils/formatters';
+import { log } from 'node:console';
 import { createWriteStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
@@ -13,7 +14,7 @@ export class StreamDownloader {
 		const filename = basename(urlPath) || 'DaVinci_Resolve_Linux.zip';
 		const outputPath = join(outputDir, filename);
 
-		console.log(`📥 Downloading ${filename} to ${outputDir}/`);
+		log(`📥 Downloading ${filename} to ${outputDir}/`);
 
 		const response = await fetch(url, {
 			headers: {
@@ -23,20 +24,14 @@ export class StreamDownloader {
 		});
 
 		if (!response.ok) {
-			throw new Error(
-				`Download failed: ${response.status} ${response.statusText}`,
-			);
+			throw new Error(`Download failed: ${response.status} ${response.statusText}`);
 		}
 
 		const contentLength = Number(response.headers.get('content-length') || 0);
-		if (contentLength > 0) {
-			console.log(`📦 File size: ${formatFileSize(contentLength)}`);
-		}
+		if (contentLength > 0) log(`📦 File size: ${formatFileSize(contentLength)}`);
 
 		const body = response.body;
-		if (!body) {
-			throw new Error('No response body');
-		}
+		if (!body) throw new Error('No response body');
 
 		const writer = createWriteStream(outputPath);
 		const reader = body.getReader();
@@ -59,7 +54,7 @@ export class StreamDownloader {
 					const pct = contentLength > 0
 						? ` (${((downloaded / contentLength) * 100).toFixed(1)}%)`
 						: '';
-					console.log(`📥 Downloaded: ${formatFileSize(downloaded)}${pct}`);
+					log(`📥 Downloaded: ${formatFileSize(downloaded)}${pct}`);
 				}
 			}
 		} finally {
@@ -72,9 +67,7 @@ export class StreamDownloader {
 			writer.on('error', reject);
 		});
 
-		console.log(
-			`✅ Download complete: ${filename} (${formatFileSize(downloaded)})`,
-		);
+		log(`✅ Download complete: ${filename} (${formatFileSize(downloaded)})`);
 		return outputPath;
 	}
 }

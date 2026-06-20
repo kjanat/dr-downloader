@@ -1,5 +1,5 @@
-import { ConfigManager } from '@/config/ConfigManager.ts';
-import { DaVinciDownloader } from '@/downloader/DaVinciDownloader.ts';
+import { ConfigManager } from '#config/ConfigManager';
+import { DaVinciDownloader } from '#downloader/DaVinciDownloader';
 
 export async function main(): Promise<void> {
 	const config = new ConfigManager();

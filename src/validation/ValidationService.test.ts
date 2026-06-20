@@ -1,4 +1,4 @@
-import { ValidationService } from '@/validation/ValidationService.ts';
+import { ValidationService } from '#validation/ValidationService';
 import { describe, expect, it } from 'bun:test';
 
 describe('ValidationService', () => {

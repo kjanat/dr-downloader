@@ -1,13 +1,16 @@
 # DaVinci Resolve Downloader
 
 Automated downloader for [DaVinci Resolve] (free edition).\
-Uses Puppeteer to navigate BMD's AngularJS registration form, capture the CDN download URL, and stream the file to disk.
+Uses Puppeteer to navigate BMD's AngularJS registration form, capture the CDN
+download URL, and stream the file to disk.
 
 ## Why
 
-BMD requires filling a registration form before downloading. This tool automates that.
+BMD requires filling a registration form before downloading. This tool automates
+that.
 
-On Arch Linux, AUR packages like `davinci-resolve` expect the zip to already exist locally:
+On Arch Linux, AUR packages like `davinci-resolve` expect the zip to already
+exist locally:
 
 ```log
 ==> ERROR: Failure while downloading file://DaVinci_Resolve_XX.X_Linux.zip
@@ -83,11 +86,14 @@ Priority: defaults -> env vars -> CLI args.
 1. Launches headless Chrome via Puppeteer (with anti-detection measures)
 2. Navigates to the BMD product page
 3. Clicks "Free Download Now" to open the OS selection modal
-4. Clicks the target platform link (`ng-click="downloadLatestStable(...)"`), which loads the registration form
+4. Clicks the target platform link (`ng-click="downloadLatestStable(...)"`),
+   which loads the registration form
 5. Fills all form fields and triggers AngularJS validation
 6. Clicks "Register & Download"
-7. Intercepts the CDN request (`swr.cloud.blackmagicdesign.com`) via Puppeteer request interception
-8. Aborts the browser download, streams the file directly via `fetch` with progress tracking
+7. Intercepts the CDN request (`swr.cloud.blackmagicdesign.com`) via Puppeteer
+   request interception
+8. Aborts the browser download, streams the file directly via `fetch` with
+   progress tracking
 
 ## AUR integration
 

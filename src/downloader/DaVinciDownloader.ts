@@ -1,8 +1,10 @@
-import type { ConfigManager } from '@/config/ConfigManager.ts';
-import type { Platform } from '@/config/types.ts';
-import { FormHandler } from '@/downloader/FormHandler.ts';
-import { StreamDownloader } from '@/downloader/StreamDownloader.ts';
-import { createBrowser, createPage } from '@/utils/browser.ts';
+import type { ConfigManager } from '#config/ConfigManager';
+import type { Platform } from '#config/types';
+import { FormHandler } from '#downloader/FormHandler';
+import { StreamDownloader } from '#downloader/StreamDownloader';
+import { createBrowser, createPage } from '#utils/browser';
+import { error, log } from 'node:console';
+import { exit } from 'node:process';
 import type { Page } from 'puppeteer';
 
 export class DaVinciDownloader {
@@ -11,20 +13,18 @@ export class DaVinciDownloader {
 	constructor(private readonly config: ConfigManager) {}
 
 	async run(): Promise<void> {
-		console.log('🎬 DaVinci Resolve Downloader - TypeScript Edition');
+		log('🎬 DaVinci Resolve Downloader - TypeScript Edition');
 
 		if (this.config.getDownloadConfig().testMode) {
-			console.log('🧪 Running in test mode');
+			log('🧪 Running in test mode');
 		}
 
 		try {
 			await this.downloadDaVinciResolve();
-			console.log('🎉 Download completed successfully!');
-		} catch (error) {
-			console.error(
-				`💥 Error: ${error instanceof Error ? error.message : String(error)}`,
-			);
-			process.exit(1);
+			log('🎉 Download completed successfully!');
+		} catch (e) {
+			error(`💥 Error: ${e instanceof Error ? e.message : String(e)}`);
+			exit(1);
 		}
 	}
 
@@ -36,7 +36,7 @@ export class DaVinciDownloader {
 			this.formHandler = new FormHandler(page);
 
 			// Step 1: Navigate to the product page
-			console.log('🌐 Navigating to DaVinci Resolve product page...');
+			log('🌐 Navigating to DaVinci Resolve product page...');
 			await page.goto(
 				'https://www.blackmagicdesign.com/products/davinciresolve',
 				{
@@ -45,17 +45,15 @@ export class DaVinciDownloader {
 				},
 			);
 
-			// Step 2: Click "Free Download Now" to open the modal
-			console.log('🖱️ Clicking "Free Download Now"...');
-			await this.clickFreeDownload(page);
-
-			// Step 3: Wait for modal and click platform
+			// Steps 2-3: Open the modal and load the registration form.
+			// BMD's backend (api/support/us/downloads.json) intermittently returns
+			// 502, which leaves the form un-rendered. Reloading re-drives the fetch,
+			// so retry the whole modal→form sequence rather than fail on one hiccup.
 			const platform = this.config.getRegistrationData().platform;
-			console.log(`📦 Selecting ${platform} platform...`);
-			await this.clickPlatformInModal(page, platform);
+			await this.openRegistrationForm(page, platform);
 
 			// Step 4: Wait for registration form and fill it
-			console.log('📝 Filling registration form...');
+			log('📝 Filling registration form...');
 			await this.formHandler.fillRegistrationForm(
 				this.config.getRegistrationData(),
 			);
@@ -65,17 +63,50 @@ export class DaVinciDownloader {
 				const downloadUrl = await this.submitAndCaptureDownloadUrl(page);
 
 				if (downloadUrl) {
-					console.log(`🔗 Captured download URL: ${downloadUrl}`);
+					log(`🔗 Captured download URL: ${downloadUrl}`);
 					const outputDir = this.config.getDownloadConfig().outputDir;
 					await StreamDownloader.download(downloadUrl, outputDir);
 				} else {
 					throw new Error('Failed to capture download URL from CDN redirect');
 				}
 			} else {
-				console.log('🧪 Test mode: skipping form submission and download');
+				log('🧪 Test mode: skipping form submission and download');
 			}
 		} finally {
 			await browser.close();
+		}
+	}
+
+	private async openRegistrationForm(
+		page: Page,
+		platform: Platform,
+	): Promise<void> {
+		const maxAttempts = 4;
+		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+			try {
+				log('🖱️ Clicking "Free Download Now"...');
+				await this.clickFreeDownload(page);
+
+				log(`📦 Selecting ${platform} platform...`);
+				await this.clickPlatformInModal(page, platform);
+				return; // #firstname is up — form rendered successfully
+			} catch (e) {
+				if (attempt === maxAttempts) {
+					throw new Error(
+						`Registration form failed to load after ${maxAttempts} attempts. `
+							+ `BMD's download API (downloads.json) may be returning 502, or `
+							+ `platform '${platform}' is unavailable. Last error: `
+							+ `${e instanceof Error ? e.message : String(e)}`,
+					);
+				}
+				log(
+					`⚠️ Form didn't load (attempt ${attempt}/${maxAttempts}) — `
+						+ `likely a BMD API hiccup, reloading...`,
+				);
+				await page
+					.reload({ waitUntil: 'networkidle2', timeout: 45_000 })
+					.catch(() => {});
+			}
 		}
 	}
 
@@ -123,9 +154,11 @@ export class DaVinciDownloader {
 		// Use page.click() for real mouse events — DOM .click() doesn't trigger ng-click reliably
 		await page.click(selector);
 
-		// Wait for the registration form inputs to render (not just <form> tag)
-		await page.waitForSelector('#firstname', { visible: true, timeout: 20_000 });
-		console.log('📋 Registration form loaded');
+		// Wait for the registration form inputs to render (not just <form> tag).
+		// Short timeout: openRegistrationForm reloads and retries on failure, so a
+		// quick give-up beats a long single-shot wait against a flaky backend.
+		await page.waitForSelector('#firstname', { visible: true, timeout: 10_000 });
+		log('📋 Registration form loaded');
 	}
 
 	private async submitAndCaptureDownloadUrl(
@@ -161,7 +194,7 @@ export class DaVinciDownloader {
 
 		// BMD uses <a ng-click="onFormSubmission()"> with a "disabled" class.
 		// Trigger Angular validation, remove disabled, then real-click.
-		console.log('🖱️ Clicking "Register & Download"...');
+		log('🖱️ Clicking "Register & Download"...');
 		await page.evaluate(() => {
 			for (const el of document.querySelectorAll('input, select, textarea')) {
 				el.dispatchEvent(new Event('input', { bubbles: true }));

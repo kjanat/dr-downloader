@@ -1,5 +1,6 @@
-import { findNewestFile, getFileSize } from '@/utils/filesystem.ts';
-import { formatFileSize } from '@/utils/formatters.ts';
+import { findNewestFile, getFileSize } from '#utils/filesystem';
+import { formatFileSize } from '#utils/formatters';
+import { log } from 'node:console';
 import { basename } from 'node:path';
 
 export class DownloadMonitor {
@@ -30,25 +31,18 @@ export class DownloadMonitor {
 					this.logProgress(targetFile, currentSize, 'downloading');
 				} else if (currentSize > 0) {
 					stabilityChecks++;
-					this.logProgress(
-						targetFile,
-						currentSize,
-						'verifying',
-						stabilityChecks,
-					);
+					this.logProgress(targetFile, currentSize, 'verifying', stabilityChecks);
 
 					if (stabilityChecks >= 3) {
-						console.log(
-							`✅ Download completed: ${basename(targetFile)} (${formatFileSize(currentSize)})`,
-						);
+						log(`✅ Download completed: ${basename(targetFile)} (${formatFileSize(currentSize)})`);
 						return targetFile;
 					}
 				} else {
 					stabilityChecks = 0;
-					console.log('⏳ Waiting for file to grow...');
+					log('⏳ Waiting for file to grow...');
 				}
 			} else {
-				console.log('⏳ Waiting for download to appear...');
+				log('⏳ Waiting for download to appear...');
 				stabilityChecks = 0;
 			}
 
@@ -64,9 +58,7 @@ export class DownloadMonitor {
 
 			const lower = filename.toLowerCase();
 			const looksLikeDavinci = /davinci|resolve|blackmagic/.test(lower);
-			const hasValidExt = /\.(zip|tar\.gz|run|dmg|exe|deb|rpm)$/i.test(
-				filename,
-			);
+			const hasValidExt = /\.(zip|tar\.gz|run|dmg|exe|deb|rpm)$/i.test(filename);
 
 			return looksLikeDavinci && hasValidExt;
 		};
@@ -82,9 +74,7 @@ export class DownloadMonitor {
 		const checkStr = check ? ` - check ${check}/3` : '';
 		const emoji = status === 'downloading' ? '📥' : '⏳';
 
-		console.log(
-			`${emoji} ${status}: ${sizeStr} (${basename(filename)})${checkStr}`,
-		);
+		log(`${emoji} ${status}: ${sizeStr} (${basename(filename)})${checkStr}`);
 	}
 
 	private sleep(ms: number): Promise<void> {

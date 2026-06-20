@@ -1,6 +1,7 @@
-import type { DownloadConfig } from '@/config/types.ts';
+import type { DownloadConfig } from '#config/types';
 import { mkdir } from 'node:fs/promises';
-import puppeteer, { type Browser, type Page } from 'puppeteer';
+import type { Browser, Page } from 'puppeteer';
+import puppeteer from 'puppeteer';
 
 export async function createBrowser(config: DownloadConfig): Promise<Browser> {
 	await mkdir(config.outputDir, { recursive: true }).catch(() => {});
@@ -34,7 +35,7 @@ export async function createPage(
 ): Promise<Page> {
 	const page = await browser.newPage();
 
-	await page.setUserAgent(USER_AGENT);
+	await page.setUserAgent({ userAgent: USER_AGENT });
 	await page.setViewport({ width: 1920, height: 1080 });
 
 	const navTimeout = Math.min(config.timeout || 45_000, 60_000);

@@ -1,0 +1,3 @@
+{
+	"extends": ["https://github.com/kjanat/kjanat/raw/refs/heads/master/configs/dprint.remote.json"],
+}

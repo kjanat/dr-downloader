@@ -1,56 +1,88 @@
-import { ConfigManager } from '@/config/ConfigManager.ts';
-import { PLATFORMS } from '@/config/types.ts';
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { ConfigManager } from '#config/ConfigManager';
+import { PLATFORMS } from '#config/types';
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
+import { env } from 'node:process';
+
+const ENV_KEYS = [
+	'DAVINCI_FIRSTNAME',
+	'DAVINCI_LASTNAME',
+	'DAVINCI_EMAIL',
+	'DAVINCI_PHONE',
+	'DAVINCI_COUNTRY',
+	'DAVINCI_STATE',
+	'DAVINCI_CITY',
+	'DAVINCI_STREET',
+	'DAVINCI_ZIPCODE',
+	'DAVINCI_COMPANY',
+	'DAVINCI_PLATFORM',
+	'DOWNLOAD_TIMEOUT_MS',
+	'RETRY_ATTEMPTS',
+	'DEFAULT_OUTPUT_PATH',
+];
+
+let exitCode: string | number | null | undefined;
+let testPlatform = process.platform;
+let testArch = process.arch;
+
+const exitMock = mock((code?: string | number | null) => {
+	exitCode = code ?? 0;
+	throw new Error(`Process exit called with code ${code}`);
+});
+const logMock = mock(() => {});
+const warnMock = mock(() => {});
+const errorMock = mock(() => {});
+
+function createConfigManager(): ConfigManager {
+	return new ConfigManager({
+		env,
+		arch: testArch,
+		platform: testPlatform,
+		exit: exitMock,
+		log: logMock,
+		warn: warnMock,
+		error: errorMock,
+	});
+}
 
 describe('ConfigManager', () => {
-	let originalEnv: NodeJS.ProcessEnv;
-	let originalArgv: string[];
-	let originalExit: typeof process.exit;
-	let exitCode: number | undefined;
+	let originalEnv: Map<string, string | undefined>;
 
 	beforeEach(() => {
-		// Save original environment
-		originalEnv = { ...process.env };
-		originalArgv = [...process.argv];
-		originalExit = process.exit;
+		originalEnv = new Map();
+		for (const key of ENV_KEYS) {
+			originalEnv.set(key, env[key]);
+			delete env[key];
+		}
 
-		// Mock process.exit to capture exit codes
 		exitCode = undefined;
-		process.exit = ((code?: number) => {
-			exitCode = code || 0;
-			throw new Error(`Process exit called with code ${code}`);
-		}) as typeof process.exit;
-
-		// Clear environment variables
-		Object.keys(process.env).forEach((key) => {
-			if (key.startsWith('DAVINCI_')) {
-				delete process.env[key];
-			}
-		});
+		testPlatform = process.platform;
+		testArch = process.arch;
+		mock.clearAllMocks();
 	});
 
 	afterEach(() => {
-		// Restore original environment
-		process.env = originalEnv;
-		process.argv = originalArgv;
-		process.exit = originalExit;
+		for (const [key, value] of originalEnv) {
+			if (value === undefined) delete env[key];
+			else env[key] = value;
+		}
+		mock.clearAllMocks();
 	});
 
 	describe('Environment Variable Validation', () => {
 		it('should load valid configuration from environment variables', () => {
 			// Set valid environment variables
-			process.env.DAVINCI_FIRSTNAME = 'John';
-			process.env.DAVINCI_LASTNAME = 'Doe';
-			process.env.DAVINCI_EMAIL = 'john.doe@example.com';
-			process.env.DAVINCI_PHONE = '555-123-4567';
-			process.env.DAVINCI_COUNTRY = 'US';
-			process.env.DAVINCI_STATE = 'New York';
-			process.env.DAVINCI_CITY = 'New York';
-			process.env.DAVINCI_STREET = '123 Main St';
-			process.env.DAVINCI_ZIPCODE = '10001';
-			process.env.DAVINCI_COMPANY = 'Test Company';
+			env.DAVINCI_FIRSTNAME = 'John';
+			env.DAVINCI_LASTNAME = 'Doe';
+			env.DAVINCI_EMAIL = 'john.doe@example.com';
+			env.DAVINCI_PHONE = '555-123-4567';
+			env.DAVINCI_COUNTRY = 'US';
+			env.DAVINCI_STATE = 'New York';
+			env.DAVINCI_CITY = 'New York';
+			env.DAVINCI_STREET = '123 Main St';
+			env.DAVINCI_ZIPCODE = '10001';
+			env.DAVINCI_COMPANY = 'Test Company';
 
-			const config = new ConfigManager();
+			const config = createConfigManager();
 			const regData = config.getRegistrationData();
 
 			expect(regData.firstname).toBe('John');
@@ -67,15 +99,15 @@ describe('ConfigManager', () => {
 
 		it('should handle optional environment variables', () => {
 			// Set only required environment variables
-			process.env.DAVINCI_FIRSTNAME = 'Jane';
-			process.env.DAVINCI_LASTNAME = 'Smith';
-			process.env.DAVINCI_EMAIL = 'jane.smith@example.com';
-			process.env.DAVINCI_COUNTRY = 'UK';
-			process.env.DAVINCI_CITY = 'London';
-			process.env.DAVINCI_STREET = '456 High Street';
-			process.env.DAVINCI_ZIPCODE = 'SW1A 1AA';
+			env.DAVINCI_FIRSTNAME = 'Jane';
+			env.DAVINCI_LASTNAME = 'Smith';
+			env.DAVINCI_EMAIL = 'jane.smith@example.com';
+			env.DAVINCI_COUNTRY = 'UK';
+			env.DAVINCI_CITY = 'London';
+			env.DAVINCI_STREET = '456 High Street';
+			env.DAVINCI_ZIPCODE = 'SW1A 1AA';
 
-			const config = new ConfigManager();
+			const config = createConfigManager();
 			const regData = config.getRegistrationData();
 
 			expect(regData.firstname).toBe('Jane');
@@ -92,29 +124,29 @@ describe('ConfigManager', () => {
 		});
 
 		it('should fail validation with invalid email', () => {
-			process.env.DAVINCI_EMAIL = 'invalid-email';
+			env.DAVINCI_EMAIL = 'invalid-email';
 
 			expect(() => {
-				new ConfigManager();
+				createConfigManager();
 			}).toThrow();
 			expect(exitCode).toBe(1);
 		});
 
 		it('should fail validation with invalid phone', () => {
-			process.env.DAVINCI_PHONE = 'invalid@phone';
+			env.DAVINCI_PHONE = 'invalid@phone';
 
 			expect(() => {
-				new ConfigManager();
+				createConfigManager();
 			}).toThrow();
 			expect(exitCode).toBe(1);
 		});
 
 		it('should fail validation with missing required fields', () => {
 			// Override the default values with invalid data
-			process.env.DAVINCI_EMAIL = 'invalid-email-format';
+			env.DAVINCI_EMAIL = 'invalid-email-format';
 
 			expect(() => {
-				new ConfigManager();
+				createConfigManager();
 			}).toThrow();
 			expect(exitCode).toBe(1);
 		});
@@ -122,7 +154,7 @@ describe('ConfigManager', () => {
 
 	describe('CLI Argument Validation', () => {
 		it('should override defaults with valid CLI arguments', () => {
-			const config = new ConfigManager();
+			const config = createConfigManager();
 
 			config.parseCliArgs([
 				'--firstname',
@@ -140,7 +172,7 @@ describe('ConfigManager', () => {
 		});
 
 		it('should handle platform selection', () => {
-			const config = new ConfigManager();
+			const config = createConfigManager();
 
 			config.parseCliArgs(['--platform', 'mac']);
 
@@ -150,92 +182,73 @@ describe('ConfigManager', () => {
 
 		it('should accept all valid platforms via CLI', () => {
 			for (const platform of PLATFORMS) {
-				const config = new ConfigManager();
+				const config = createConfigManager();
 				config.parseCliArgs(['--platform', platform]);
 				expect(config.getRegistrationData().platform).toBe(platform);
 			}
 		});
 
 		it('should accept --platform winarm', () => {
-			const config = new ConfigManager();
+			const config = createConfigManager();
 			config.parseCliArgs(['--platform', 'winarm']);
 			expect(config.getRegistrationData().platform).toBe('winarm');
 		});
 
 		it('should warn on invalid platform', () => {
-			const config = new ConfigManager();
-			let warnMessage = '';
-			const originalWarn = console.warn;
-			console.warn = (msg: string) => {
-				warnMessage = msg;
-			};
+			const config = createConfigManager();
 
 			config.parseCliArgs(['--platform', 'invalid']);
 
-			expect(warnMessage).toContain('Unknown platform: invalid');
-			expect(warnMessage).toContain('Valid:');
-			console.warn = originalWarn;
+			expect(warnMock).toHaveBeenCalledWith(
+				'⚠️ Unknown platform: invalid. Valid: linux, mac, windows, winarm',
+			);
 		});
 
 		it('should handle help flag', () => {
-			const config = new ConfigManager();
-			const originalLog = console.log;
-			console.log = () => {};
+			const config = createConfigManager();
 
 			expect(() => {
 				config.parseCliArgs(['--help']);
 			}).toThrow();
 			expect(exitCode).toBe(0);
-
-			console.log = originalLog;
 		});
 
 		it('should handle validate-only flag with valid data', () => {
 			// Set valid environment first
-			process.env.DAVINCI_FIRSTNAME = 'John';
-			process.env.DAVINCI_LASTNAME = 'Doe';
-			process.env.DAVINCI_EMAIL = 'john.doe@example.com';
-			process.env.DAVINCI_COUNTRY = 'US';
-			process.env.DAVINCI_STATE = 'New York';
-			process.env.DAVINCI_CITY = 'New York';
-			process.env.DAVINCI_STREET = '123 Main St';
-			process.env.DAVINCI_ZIPCODE = '10001';
+			env.DAVINCI_FIRSTNAME = 'John';
+			env.DAVINCI_LASTNAME = 'Doe';
+			env.DAVINCI_EMAIL = 'john.doe@example.com';
+			env.DAVINCI_COUNTRY = 'US';
+			env.DAVINCI_STATE = 'New York';
+			env.DAVINCI_CITY = 'New York';
+			env.DAVINCI_STREET = '123 Main St';
+			env.DAVINCI_ZIPCODE = '10001';
 
-			const config = new ConfigManager();
-			const originalLog = console.log;
-			console.log = () => {};
+			const config = createConfigManager();
 
 			expect(() => {
 				config.parseCliArgs(['--validate-only']);
 			}).toThrow();
 			expect(exitCode).toBe(0);
-
-			console.log = originalLog;
 		});
 
 		it('should handle validate-only flag with invalid data', () => {
 			// Create config with valid defaults first
-			const config = new ConfigManager();
-
-			// Then override with invalid CLI args that will fail --validate-only
-			const originalLog = console.log;
-			console.log = () => {};
+			const config = createConfigManager();
 
 			expect(() => {
 				config.parseCliArgs(['--email', 'invalid-email', '--validate-only']);
 			}).toThrow();
 			expect(exitCode).toBe(1);
-
-			console.log = originalLog;
 		});
 	});
 
 	describe('Configuration Merging', () => {
 		it('should merge environment variables with defaults', () => {
-			process.env.DAVINCI_FIRSTNAME = 'EnvName';
-			process.env.DAVINCI_EMAIL = 'env@example.com';
+			env.DAVINCI_FIRSTNAME = 'EnvName';
+			env.DAVINCI_EMAIL = 'env@example.com';
 
-			const config = new ConfigManager();
+			const config = createConfigManager();
 			const regData = config.getRegistrationData();
 
 			// Should use environment values
@@ -248,10 +261,10 @@ describe('ConfigManager', () => {
 		});
 
 		it('should prioritize CLI args over environment variables', () => {
-			process.env.DAVINCI_FIRSTNAME = 'EnvName';
-			process.env.DAVINCI_EMAIL = 'env@example.com';
+			env.DAVINCI_FIRSTNAME = 'EnvName';
+			env.DAVINCI_EMAIL = 'env@example.com';
 
-			const config = new ConfigManager();
+			const config = createConfigManager();
 
 			config.parseCliArgs([
 				'--firstname',
@@ -270,35 +283,25 @@ describe('ConfigManager', () => {
 
 	describe('Edge Cases', () => {
 		it('should handle missing CLI argument values', () => {
-			const config = new ConfigManager();
-			let warnMessage = '';
-			const originalWarn = console.warn;
-			console.warn = (msg: string) => {
-				warnMessage = msg;
-			};
+			const config = createConfigManager();
 
 			config.parseCliArgs(['--firstname', '--email', 'test@example.com']);
 
-			expect(warnMessage).toBe('⚠️ Missing value for --firstname');
-			console.warn = originalWarn;
+			expect(warnMock).toHaveBeenCalledWith('⚠️ Missing value for --firstname');
 		});
 
 		it('should handle unknown CLI arguments', () => {
-			const config = new ConfigManager();
-			let warnMessage = '';
-			const originalWarn = console.warn;
-			console.warn = (msg: string) => {
-				warnMessage = msg;
-			};
+			const config = createConfigManager();
 
 			config.parseCliArgs(['--unknown', 'value']);
 
-			expect(warnMessage).toBe('⚠️ Unknown or malformed argument: --unknown');
-			console.warn = originalWarn;
+			expect(warnMock).toHaveBeenCalledWith(
+				'⚠️ Unknown or malformed argument: --unknown',
+			);
 		});
 
 		it('should handle test mode flag', () => {
-			const config = new ConfigManager();
+			const config = createConfigManager();
 
 			config.parseCliArgs(['--test']);
 
@@ -308,84 +311,71 @@ describe('ConfigManager', () => {
 	});
 
 	describe('Platform Autodetection', () => {
-		let originalPlatform: NodeJS.Platform;
-		let originalArch: NodeJS.Architecture;
-
-		beforeEach(() => {
-			originalPlatform = process.platform;
-			originalArch = process.arch;
-		});
-
-		afterEach(() => {
-			Object.defineProperty(process, 'platform', { value: originalPlatform });
-			Object.defineProperty(process, 'arch', { value: originalArch });
-		});
-
 		it('should detect macOS (universal binary) regardless of arch', () => {
-			Object.defineProperty(process, 'platform', { value: 'darwin' });
-			Object.defineProperty(process, 'arch', { value: 'arm64' });
+			testPlatform = 'darwin';
+			testArch = 'arm64';
 
-			const config = new ConfigManager();
+			const config = createConfigManager();
 			expect(config.getRegistrationData().platform).toBe('mac');
 		});
 
 		it('should detect Windows x86_64', () => {
-			Object.defineProperty(process, 'platform', { value: 'win32' });
-			Object.defineProperty(process, 'arch', { value: 'x64' });
+			testPlatform = 'win32';
+			testArch = 'x64';
 
-			const config = new ConfigManager();
+			const config = createConfigManager();
 			expect(config.getRegistrationData().platform).toBe('windows');
 		});
 
 		it('should detect Windows ARM as winarm', () => {
-			Object.defineProperty(process, 'platform', { value: 'win32' });
-			Object.defineProperty(process, 'arch', { value: 'arm64' });
+			testPlatform = 'win32';
+			testArch = 'arm64';
 
-			const config = new ConfigManager();
+			const config = createConfigManager();
 			expect(config.getRegistrationData().platform).toBe('winarm');
 		});
 
 		it('should detect Linux x86_64', () => {
-			Object.defineProperty(process, 'platform', { value: 'linux' });
-			Object.defineProperty(process, 'arch', { value: 'x64' });
+			testPlatform = 'linux';
+			testArch = 'x64';
 
-			const config = new ConfigManager();
+			const config = createConfigManager();
 			expect(config.getRegistrationData().platform).toBe('linux');
 		});
 
 		it('should throw on Linux ARM instead of downloading unusable binary', () => {
-			Object.defineProperty(process, 'platform', { value: 'linux' });
-			Object.defineProperty(process, 'arch', { value: 'arm64' });
+			testPlatform = 'linux';
+			testArch = 'arm64';
 
-			expect(() => new ConfigManager()).toThrow(
+			expect(() => createConfigManager()).toThrow(
 				/Linux arm64.*x86_64.*DAVINCI_PLATFORM=linux/,
 			);
 		});
 
 		it('should guide user toward DAVINCI_PLATFORM env var in ARM error', () => {
-			Object.defineProperty(process, 'platform', { value: 'linux' });
-			Object.defineProperty(process, 'arch', { value: 'arm64' });
+			testPlatform = 'linux';
+			testArch = 'arm64';
 
 			// autodetectPlatform throws during construction — CLI args can't
 			// override because parseCliArgs runs after the constructor.
 			// The env var is the only escape hatch.
-			expect(() => new ConfigManager()).toThrow('DAVINCI_PLATFORM=linux');
+			expect(() => createConfigManager()).toThrow('DAVINCI_PLATFORM=linux');
 		});
 
 		it('should allow DAVINCI_PLATFORM env var to bypass ARM Linux throw', () => {
-			Object.defineProperty(process, 'platform', { value: 'linux' });
-			Object.defineProperty(process, 'arch', { value: 'arm64' });
-			process.env.DAVINCI_PLATFORM = 'linux';
+			testPlatform = 'linux';
+			testArch = 'arm64';
+			env.DAVINCI_PLATFORM = 'linux';
 
-			const config = new ConfigManager();
+			const config = createConfigManager();
 			expect(config.getRegistrationData().platform).toBe('linux');
 		});
 
 		it('should accept --platform linux on x64 Linux', () => {
-			Object.defineProperty(process, 'platform', { value: 'linux' });
-			Object.defineProperty(process, 'arch', { value: 'x64' });
+			testPlatform = 'linux';
+			testArch = 'x64';
 
-			const config = new ConfigManager();
+			const config = createConfigManager();
 			config.parseCliArgs(['--platform', 'linux']);
 			expect(config.getRegistrationData().platform).toBe('linux');
 		});
