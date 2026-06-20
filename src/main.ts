@@ -1,12 +1,3 @@
-import { ConfigManager } from '#config/ConfigManager';
-import { DaVinciDownloader } from '#downloader/DaVinciDownloader';
+import { app } from '#cli';
 
-export async function main(): Promise<void> {
-	const config = new ConfigManager();
-	config.parseCliArgs(process.argv.slice(2));
-
-	const downloader = new DaVinciDownloader(config);
-	await downloader.run();
-}
-
-if (import.meta.main) main();
+if (import.meta.main) app.run();

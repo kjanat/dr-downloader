@@ -77,11 +77,34 @@ export DAVINCI_EMAIL="you@example.com"
 export DAVINCI_COUNTRY="US"
 export DAVINCI_STATE="California"
 export DAVINCI_REGION="gb"                   # force BMD support region (2-letter)
-export DEFAULT_OUTPUT_PATH="/custom/path"    # override download directory
-export DOWNLOAD_TIMEOUT_MS="900000"          # 15 min default
+export DAVINCI_OUTPUT_DIR="/custom/path"      # override download directory
+export DAVINCI_TIMEOUT_MS="900000"            # download timeout (15 min default)
+export DAVINCI_RETRY_ATTEMPTS="3"             # download retry attempts
 ```
 
-Priority: defaults -> env vars -> CLI args.
+Priority: CLI args -> env vars -> config file -> built-in defaults.
+
+### Config file
+
+Any flag can also be set in a JSON config file. It is discovered (XDG-aware), in
+order, at:
+
+- `./.davinci-resolve-downloader.json` (current directory)
+- `$XDG_CONFIG_HOME/davinci-resolve-downloader/config.json` (defaults to
+  `~/.config/davinci-resolve-downloader/config.json`)
+- any path passed with `--config <path>`
+
+Keys match the flag names:
+
+```json
+{
+	"country": "US",
+	"state": "California",
+	"region": "gb",
+	"output": "/home/me/Downloads",
+	"retryAttempts": 5
+}
+```
 
 ## How it works
 
@@ -117,35 +140,48 @@ curl: (3) URL rejected: Bad file:// URL
 ==> ERROR: Failure while downloading file://DaVinci_Resolve_21.0_Linux.zip
 ```
 
-`--aur` downloads straight into that clone dir (autodetecting paru vs yay;
-override with `DAVINCI_AUR_DIR`). The clone dir must exist first, so fetch the
-PKGBUILD, drop in the zip, then build:
+The zip just needs to sit beside the PKGBUILD. The cleanest flow clones the
+PKGBUILD into the current directory (that's where `-G` puts it), downloads the
+zip there, then builds:
 
 ```bash
 # paru
-paru --getpkgbuilds davinci-resolve            # clone/refresh PKGBUILD
-dr-downloader --aur                            # zip -> ~/.cache/paru/clone/davinci-resolve/
-paru -Bi ~/.cache/paru/clone/davinci-resolve   # build + install (won't re-clean the zip)
+paru -G davinci-resolve              # clone the PKGBUILD into ./davinci-resolve/
+dr-downloader -o davinci-resolve     # download the zip beside it
+paru -Bi davinci-resolve             # build + install
 
 # yay
-yay --getpkgbuilds davinci-resolve
-dr-downloader --aur
-yay -Bi ~/.cache/yay/davinci-resolve
+yay -G davinci-resolve
+dr-downloader -o davinci-resolve
+yay -Bi davinci-resolve
 ```
 
 One-liner shell function:
 
 ```bash
 davinci-aur() {
-  paru --getpkgbuilds davinci-resolve &&
-    dr-downloader --aur &&
-    paru -Bi ~/.cache/paru/clone/davinci-resolve
+  paru -G davinci-resolve &&
+    dr-downloader -o davinci-resolve &&
+    paru -Bi davinci-resolve
 }
 ```
 
+### Recovering a failed `paru -S`
+
+If `paru -S davinci-resolve` already cloned the package into its own cache and
+only failed on the missing zip, skip the re-clone: `--aur` drops the zip
+straight into that existing clone dir (autodetecting paru's
+`~/.cache/paru/clone/davinci-resolve` vs yay's `~/.cache/yay/davinci-resolve`;
+override with `DAVINCI_AUR_DIR`), then build from it:
+
+```bash
+dr-downloader --aur
+paru -Bi ~/.cache/paru/clone/davinci-resolve
+```
+
 > The installer BMD serves (latest stable) must match the PKGBUILD's `pkgver`,
-> or the filename/sha256 won't line up. Run `--getpkgbuilds` first so the
-> PKGBUILD is current.
+> or the filename/sha256 won't line up. Run `paru -G davinci-resolve` first so
+> the PKGBUILD is current.
 
 ## Notes
 
