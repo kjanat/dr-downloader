@@ -10,6 +10,13 @@ import type { Page } from 'puppeteer';
 export class DaVinciDownloader {
 	private formHandler?: FormHandler;
 
+	/**
+	 * Regions tried (in order) when no region is forced and the form fails to
+	 * load. All verified to serve `/api/support/<region>/downloads.json`; covers
+	 * spread-out BMD edges so a single region's 502 outage doesn't block downloads.
+	 */
+	private static readonly FALLBACK_REGIONS = ['gb', 'au', 'de', 'sg', 'ca'] as const;
+
 	constructor(private readonly config: ConfigManager) {}
 
 	async run(): Promise<void> {
@@ -83,31 +90,86 @@ export class DaVinciDownloader {
 	): Promise<void> {
 		const maxAttempts = 4;
 		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-			try {
-				log('🖱️ Clicking "Free Download Now"...');
-				await this.clickFreeDownload(page);
+			const region = this.regionForAttempt(attempt);
+			await this.applyRegion(page, region);
 
-				log(`📦 Selecting ${platform} platform...`);
-				await this.clickPlatformInModal(page, platform);
-				return; // #firstname is up — form rendered successfully
-			} catch (e) {
-				if (attempt === maxAttempts) {
-					throw new Error(
-						`Registration form failed to load after ${maxAttempts} attempts. `
-							+ `BMD's download API (downloads.json) may be returning 502, or `
-							+ `platform '${platform}' is unavailable. Last error: `
-							+ `${e instanceof Error ? e.message : String(e)}`,
-					);
-				}
-				log(
-					`⚠️ Form didn't load (attempt ${attempt}/${maxAttempts}) — `
-						+ `likely a BMD API hiccup, reloading...`,
-				);
+			// Reload so a switched region takes effect on the next fetch. Attempt 1
+			// with the native geo region needs no reload — the page is already loaded.
+			if (attempt > 1 || region) {
 				await page
 					.reload({ waitUntil: 'networkidle2', timeout: 45_000 })
 					.catch(() => {});
 			}
+
+			const result = await this.tryOpenForm(page, platform, region);
+			if (result.ok) return; // #firstname is up — form rendered successfully
+
+			if (attempt === maxAttempts) {
+				throw new Error(
+					`Registration form failed to load after ${maxAttempts} attempts. `
+						+ `BMD's download API (downloads.json) may be returning 502 across `
+						+ `regions, or platform '${platform}' is unavailable. Last error: `
+						+ `${result.error}`,
+				);
+			}
+			const next = this.regionForAttempt(attempt + 1);
+			const retryWith = next ? `region '${next}'` : 'a reload';
+			log(
+				`⚠️ Form didn't load (attempt ${attempt}/${maxAttempts}) — `
+					+ `likely a BMD API hiccup, retrying with ${retryWith}...`,
+			);
 		}
+	}
+
+	/**
+	 * Runs one modal→platform→form attempt. Returns a discriminated result rather
+	 * than throwing so the retry loop stays flat (and below the complexity ceiling).
+	 */
+	private async tryOpenForm(
+		page: Page,
+		platform: Platform,
+		region: string | null,
+	): Promise<{ ok: true } | { ok: false; error: string }> {
+		try {
+			log('🖱️ Clicking "Free Download Now"...');
+			await this.clickFreeDownload(page);
+
+			const via = region ? ` (region ${region})` : '';
+			log(`📦 Selecting ${platform} platform${via}...`);
+			await this.clickPlatformInModal(page, platform);
+			return { ok: true };
+		} catch (e) {
+			return { ok: false, error: e instanceof Error ? e.message : String(e) };
+		}
+	}
+
+	/**
+	 * Picks the BMD region for a given attempt. A user-forced region (via
+	 * `--region`/`DAVINCI_REGION`) is used for every attempt. Otherwise attempt 1
+	 * uses the native geo-detected region and later attempts rotate through
+	 * {@link DaVinciDownloader.FALLBACK_REGIONS} to dodge region-specific outages.
+	 */
+	private regionForAttempt(attempt: number): string | null {
+		const forced = this.config.getDownloadConfig().region;
+		if (forced) return forced;
+		if (attempt <= 1) return null;
+		const fallbacks = DaVinciDownloader.FALLBACK_REGIONS;
+		return fallbacks[(attempt - 2) % fallbacks.length] ?? null;
+	}
+
+	/**
+	 * Sets the `__dr_region` cookie that the in-page XHR shim (see browser.ts)
+	 * reads to rewrite `/api/support/<region>/` requests. A null region means the
+	 * native geo region — the cookie is simply left unset, so no rewrite happens.
+	 */
+	private async applyRegion(page: Page, region: string | null): Promise<void> {
+		if (!region) return;
+		await page.browserContext().setCookie({
+			name: '__dr_region',
+			value: region,
+			domain: 'www.blackmagicdesign.com',
+			path: '/',
+		});
 	}
 
 	private async clickFreeDownload(page: Page): Promise<void> {

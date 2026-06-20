@@ -47,5 +47,36 @@ export async function createPage(
 		Object.defineProperty(navigator, 'webdriver', { get: () => false });
 	});
 
+	// Region override: rewrite /api/support/<region>/ on the wire so AngularJS's
+	// $http (XMLHttpRequest) hits a chosen BMD region instead of the geo-detected
+	// one. The target region is read from the `__dr_region` cookie on every call,
+	// so the orchestrator can switch regions between reloads without re-injecting.
+	// No-op when the cookie is absent. Two-letter `[a-z]{2}` boundary guards the
+	// region segment, leaving region-less endpoints (latest-stable-version/…) alone.
+	await page.evaluateOnNewDocument(() => {
+		const re = /(\/api\/support\/)[a-z]{2}\//;
+		const targetRegion = (): string | null => {
+			const m = document.cookie.match(/(?:^|;\s*)__dr_region=([a-z]{2})(?:;|$)/);
+			return m?.[1] ?? null;
+		};
+		const rewrite = (url: string): string => {
+			const region = targetRegion();
+			return region && re.test(url) ? url.replace(re, `$1${region}/`) : url;
+		};
+		const proto = XMLHttpRequest.prototype;
+		const originalOpen = proto.open;
+		proto.open = function(
+			this: XMLHttpRequest,
+			method: string,
+			url: string | URL,
+			async?: boolean,
+			username?: string | null,
+			password?: string | null,
+		): void {
+			const target = typeof url === 'string' ? rewrite(url) : rewrite(url.toString());
+			originalOpen.call(this, method, target, async ?? true, username ?? null, password ?? null);
+		};
+	});
+
 	return page;
 }

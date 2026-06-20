@@ -67,6 +67,9 @@ export class ConfigManager {
 				if (isPlatform(v)) this.registrationData.platform = v;
 				else this.runtime.warn(`⚠️ Unknown platform: ${v}. Valid: ${PLATFORMS.join(', ')}`);
 			},
+			'--region': (v) => {
+				this.downloadConfig.region = this.normalizeRegion(v);
+			},
 			'--firstname': (v) => this.applyRegistrationArg('--firstname', v),
 			'--lastname': (v) => this.applyRegistrationArg('--lastname', v),
 			'--email': (v) => this.applyRegistrationArg('--email', v),
@@ -162,7 +165,21 @@ export class ConfigManager {
 				? timeoutEnv
 				: 15 * 60 * 1000,
 			retryAttempts: Number.isFinite(retryEnv) && retryEnv > 0 ? retryEnv : 3,
+			region: this.normalizeRegion(this.runtime.env.DAVINCI_REGION),
 		};
+	}
+
+	/**
+	 * Normalizes a BMD support region code to its canonical `[a-z]{2}` form.
+	 * Returns undefined for missing or malformed input (with a warning), so an
+	 * invalid value falls back to geo-detection rather than breaking requests.
+	 */
+	private normalizeRegion(value: string | undefined): string | undefined {
+		if (!value) return undefined;
+		const region = value.trim().toLowerCase();
+		if (/^[a-z]{2}$/.test(region)) return region;
+		this.runtime.warn(`⚠️ Invalid region "${value}" (expected 2-letter code, e.g. gb). Ignoring.`);
+		return undefined;
 	}
 
 	private defaultRegistrationData(): RegistrationData {
@@ -252,6 +269,8 @@ Options:
   -o, --output <dir>   Download directory (default: ~/Downloads)
   --aur                AUR preset: output to ~/.cache/yay/davinci-resolve/, platform linux
   --platform <p>       ${PLATFORMS.join(' | ')} (default: autodetect)
+  --region <code>      BMD support region, 2-letter (e.g. gb). Default: geo-detected,
+                       with automatic fallback to other regions on failure
   --firstname <name>
   --lastname <name>
   --email <email>
@@ -267,6 +286,7 @@ Options:
 
 Environment Variables:
   DAVINCI_PLATFORM     Override platform autodetection (${PLATFORMS.join(' | ')})
+  DAVINCI_REGION       Override BMD support region (2-letter code, e.g. gb)
   DAVINCI_FIRSTNAME, DAVINCI_LASTNAME, DAVINCI_EMAIL, DAVINCI_PHONE
   DAVINCI_COUNTRY, DAVINCI_STATE, DAVINCI_CITY, DAVINCI_STREET
   DAVINCI_ZIPCODE, DAVINCI_COMPANY

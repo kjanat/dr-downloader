@@ -49,23 +49,24 @@ dr-downloader --help                       # show all options
 
 ### CLI flags
 
-| Flag                 | Description                                           |
-| -------------------- | ----------------------------------------------------- |
-| `-o, --output <dir>` | Download directory (default: `~/Downloads`)           |
-| `--aur`              | AUR preset: output to `~/.cache/yay/davinci-resolve/` |
-| `--platform <p>`     | `linux`, `mac`, `windows` (default: autodetect)       |
-| `--firstname <name>` | First name                                            |
-| `--lastname <name>`  | Last name                                             |
-| `--email <email>`    | Email address                                         |
-| `--phone <phone>`    | Phone number                                          |
-| `--country <code>`   | Country code or full name (e.g. `US`)                 |
-| `--state <state>`    | State/province (required for US/CA)                   |
-| `--city <city>`      | City                                                  |
-| `--street <addr>`    | Street address                                        |
-| `--zipcode <zip>`    | Postal code                                           |
-| `--company <name>`   | Company (optional)                                    |
-| `--validate-only`    | Validate config and exit                              |
-| `-t, --test`         | Test mode: no actual download                         |
+| Flag                 | Description                                            |
+| -------------------- | ------------------------------------------------------ |
+| `-o, --output <dir>` | Download directory (default: `~/Downloads`)            |
+| `--aur`              | AUR preset: output to `~/.cache/yay/davinci-resolve/`  |
+| `--platform <p>`     | `linux`, `mac`, `windows` (default: autodetect)        |
+| `--region <code>`    | BMD support region, 2-letter (e.g. `gb`); default: geo |
+| `--firstname <name>` | First name                                             |
+| `--lastname <name>`  | Last name                                              |
+| `--email <email>`    | Email address                                          |
+| `--phone <phone>`    | Phone number                                           |
+| `--country <code>`   | Country code or full name (e.g. `US`)                  |
+| `--state <state>`    | State/province (required for US/CA)                    |
+| `--city <city>`      | City                                                   |
+| `--street <addr>`    | Street address                                         |
+| `--zipcode <zip>`    | Postal code                                            |
+| `--company <name>`   | Company (optional)                                     |
+| `--validate-only`    | Validate config and exit                               |
+| `-t, --test`         | Test mode: no actual download                          |
 
 ### Environment variables
 
@@ -75,6 +76,7 @@ All registration fields can be set via `DAVINCI_*` env vars. CLI args take prece
 export DAVINCI_EMAIL="you@example.com"
 export DAVINCI_COUNTRY="US"
 export DAVINCI_STATE="California"
+export DAVINCI_REGION="gb"                   # force BMD support region (2-letter)
 export DEFAULT_OUTPUT_PATH="/custom/path"    # override download directory
 export DOWNLOAD_TIMEOUT_MS="900000"          # 15 min default
 ```
@@ -94,6 +96,14 @@ Priority: defaults -> env vars -> CLI args.
    request interception
 8. Aborts the browser download, streams the file directly via `fetch` with
    progress tracking
+
+### Region resilience
+
+BMD's `api/support/<region>/downloads.json` endpoint (which drives the form)
+intermittently returns `502`. If the form fails to load, the tool reloads and
+retries, rotating through alternate regions (`gb`, `au`, `de`, `sg`, `ca`) to
+dodge a region-specific outage. Force a specific region with `--region` /
+`DAVINCI_REGION` if you know one is healthy.
 
 ## AUR integration
 

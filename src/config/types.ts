@@ -26,4 +26,11 @@ export interface DownloadConfig {
 	testMode: boolean;
 	timeout: number;
 	retryAttempts: number;
+	/**
+	 * Two-letter BMD support region (e.g. `gb`, `au`) used to override the
+	 * geo-detected region for the `/api/support/<region>/` endpoints. When
+	 * unset, the native geo region is used first and fallbacks are tried
+	 * automatically if the form fails to load.
+	 */
+	region?: string;
 }
