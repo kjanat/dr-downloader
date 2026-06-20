@@ -180,7 +180,7 @@ paru -Bi ~/.cache/paru/clone/davinci-resolve
 ```
 
 > The installer BMD serves (latest stable) must match the PKGBUILD's `pkgver`,
-> or the filename/sha256 won't line up. Run `paru -G` (or `paru -Sy`) first so
+> or the filename/sha256 won't line up. Run `paru -G davinci-resolve` first so
 > the PKGBUILD is current.
 
 ## Notes
