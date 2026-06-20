@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://www.schemastore.org/github-issue-forms.json
+---
+name: Feature request / idea
+description: Suggest something. No promises — see Stability & support.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Ideas are welcome, but this is a scratch-my-own-itch tool with no
+        roadmap. A request alone may sit forever; a PR that implements it is far
+        more likely to land.
+  - type: textarea
+    id: what
+    attributes:
+      label: What do you want?
+      description: The behaviour or flag you're after.
+    validations: { required: true }
+  - type: textarea
+    id: why
+    attributes:
+      label: Why?
+      description: The actual problem this solves — not the solution restated.
+    validations: { required: true }
+  - type: dropdown
+    id: pr
+    attributes:
+      label: Would you open a PR for it?
+      options:
+        - "Yes — I'll implement it"
+        - "Maybe, with some pointers"
+        - "No, just suggesting"
+    validations: { required: true }

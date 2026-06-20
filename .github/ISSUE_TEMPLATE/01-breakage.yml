@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=https://www.schemastore.org/github-issue-forms.json
+---
+name: It broke (BMD probably changed their site)
+description: The downloader fails part-way through the modal → form → download flow.
+labels: [breakage]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        This tool drives Blackmagic Design's **live website**. When they change
+        their markup or download flow, it breaks — that's expected, not a
+        surprise. **Don't contact BMD about it** (not their tool, not their
+        bug). File it here, with the full output below. No warranty, no
+        timeline; a PR that fixes the breakage is the surest path to a fix.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `dr-downloader --version`.
+      placeholder: 1.0.0-alpha.1
+    validations: { required: true }
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Where did it fail?
+      description: Roughly which step (see the README "How it works").
+      options:
+        - Opening the "Free Download Now" modal
+        - Selecting the platform
+        - Loading the registration form
+        - Filling / validating the form
+        - Submitting ("Register & Download")
+        - Capturing the CDN download URL
+        - Streaming the file to disk
+        - Not sure
+    validations: { required: true }
+  - type: textarea
+    id: command
+    attributes:
+      label: Command you ran
+      description: The exact invocation (redact personal details).
+      render: shell
+      placeholder: dr-downloader --aur --region gb
+    validations: { required: true }
+  - type: textarea
+    id: output
+    attributes:
+      label: Full output
+      description: >-
+        The complete terminal output / error — not a snippet. Re-run with
+        `--test` if you can reproduce without downloading the multi-GB file.
+      render: shell
+    validations: { required: true }
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Target platform
+      description: The `--platform` value (or what was autodetected).
+      options: [linux, mac, windows, winarm]
+    validations: { required: true }
+  - type: input
+    id: os
+    attributes:
+      label: Your OS / runtime
+      placeholder: "Arch Linux x86_64, Node 22 (or Bun 1.x)"
+    validations: { required: true }
+  - type: checkboxes
+    id: context
+    attributes:
+      label: Context
+      options:
+        - label: I used `--aur`
+        - label: I forced a `--region` / `DAVINCI_REGION`
+        - label: I supplied my own registration data (not the placeholder)
+        - label: It worked before and broke recently
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Screenshots of the failing page, network errors, hunches.

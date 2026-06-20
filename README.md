@@ -278,6 +278,25 @@ anti-bot-detection measures (the "anti-detection measures" in step 1 of
 browser; the _User-Agent_ is not. The identifiable thing — the part BMD would
 actually filter on — stays honest by design.
 
+## Stability & support
+
+This tool drives Blackmagic Design's **live website** — it clicks through their
+exact current modal, form, and CDN flow. None of that is an API and none of it
+is under my control. The day BMD reshuffles their markup, renames a field, or
+changes how the download is served, this tool **will break**, probably without
+warning.
+
+When it does:
+
+- **Don't bother BMD.** It's not their bug and not their tool. Pestering their
+  support about a third-party scraper helps no one.
+- **Complain to me**, not them: [open an issue]. A clear report (what you ran,
+  what happened) is the most useful thing you can send.
+- **Expect nothing.** This is provided as-is, no warranty, no SLA, no promise it
+  gets fixed on any timeline — or ever. I scratch my own itch; if it works for
+  you too, great. PRs that fix a breakage are far more likely to land than a bug
+  report alone.
+
 ## Notes
 
 - DaVinci Resolve is proprietary software by Blackmagic Design
@@ -293,6 +312,7 @@ actually filter on — stays honest by design.
 [DaVinci Resolve]: https://www.blackmagicdesign.com/products/davinciresolve
 [Bun]: https://bun.sh/
 [@kjanat/dreamcli]: https://npm.im/@kjanat/dreamcli
+[open an issue]: https://github.com/kjanat/dr-downloader/issues
 
 <!-- markdownlint-disable-file MD033 -->
 <!-- rumdl-disable-file MD013 -->

@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://www.schemastore.org/github-issue-config.json
+---
+blank_issues_enabled: false
+contact_links:
+  - name: DaVinci Resolve itself (not this tool)
+    url: https://www.blackmagicdesign.com/support
+    about: >-
+      Problems with DaVinci Resolve the software — installing, licensing,
+      crashes, activation — belong to Blackmagic Design, not this downloader.
+      Take those there.
+  - name: Read "Stability & support" first
+    url: https://github.com/kjanat/dr-downloader#stability--support
+    about: >-
+      This tool scrapes BMD's live site and is provided as-is: no warranty, no
+      SLA, no promise it gets fixed. PRs land faster than reports.

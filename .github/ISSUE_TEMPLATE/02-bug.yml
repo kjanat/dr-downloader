@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=https://www.schemastore.org/github-issue-forms.json
+---
+name: Bug report (not a site breakage)
+description: Something misbehaves and it isn't BMD changing their site.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        For "the download flow stopped working", use **It broke** instead. Use
+        this for everything else: wrong output path, a flag that misbehaves,
+        config not picked up, a crash unrelated to the BMD page.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `dr-downloader --version`.
+      placeholder: 1.0.0-alpha.1
+    validations: { required: true }
+  - type: textarea
+    id: command
+    attributes:
+      label: Command you ran
+      render: shell
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations: { required: true }
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened
+      description: Include the full output / error.
+      render: shell
+    validations: { required: true }
+  - type: input
+    id: os
+    attributes:
+      label: OS / runtime
+      placeholder: "macOS 15, Node 22"
+    validations: { required: true }
