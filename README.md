@@ -107,11 +107,45 @@ dodge a region-specific outage. Force a specific region with `--region` /
 
 ## AUR integration
 
-```bash
-# download directly to yay cache + install
-dr-downloader --aur
-yay -S davinci-resolve
+The `davinci-resolve` PKGBUILD declares a local source
+(`source=("file://DaVinci_Resolve_${pkgver}_Linux.zip")`) and expects the zip to
+already sit **in the clone directory** next to the PKGBUILD. Without it, makepkg
+hands the relative `file://` URL to curl and fails:
+
+```log
+curl: (3) URL rejected: Bad file:// URL
+==> ERROR: Failure while downloading file://DaVinci_Resolve_21.0_Linux.zip
 ```
+
+`--aur` downloads straight into that clone dir (autodetecting paru vs yay;
+override with `DAVINCI_AUR_DIR`). The clone dir must exist first, so fetch the
+PKGBUILD, drop in the zip, then build:
+
+```bash
+# paru
+paru --getpkgbuilds davinci-resolve            # clone/refresh PKGBUILD
+dr-downloader --aur                            # zip -> ~/.cache/paru/clone/davinci-resolve/
+paru -Bi ~/.cache/paru/clone/davinci-resolve   # build + install (won't re-clean the zip)
+
+# yay
+yay --getpkgbuilds davinci-resolve
+dr-downloader --aur
+yay -Bi ~/.cache/yay/davinci-resolve
+```
+
+One-liner shell function:
+
+```bash
+davinci-aur() {
+  paru --getpkgbuilds davinci-resolve &&
+    dr-downloader --aur &&
+    paru -Bi ~/.cache/paru/clone/davinci-resolve
+}
+```
+
+> The installer BMD serves (latest stable) must match the PKGBUILD's `pkgver`,
+> or the filename/sha256 won't line up. Run `--getpkgbuilds` first so the
+> PKGBUILD is current.
 
 ## Notes
 

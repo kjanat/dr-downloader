@@ -2,8 +2,9 @@ import type { DownloadConfig, Platform, RegistrationData } from '#config/types';
 import { isPlatform, PLATFORMS } from '#config/types';
 import { ValidationService } from '#validation/ValidationService';
 import { error, log, warn } from 'node:console';
+import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { arch, env, exit, platform } from 'node:process';
 
 interface ConfigRuntime {
@@ -40,8 +41,24 @@ export class ConfigManager {
 		this.validateConfiguration();
 	}
 
-	/** AUR cache path used by yay/paru for the davinci-resolve package. */
-	static readonly AUR_OUTPUT_DIR = join(homedir(), '.cache', 'yay', 'davinci-resolve');
+	/**
+	 * Resolves the AUR helper's clone directory for the `davinci-resolve`
+	 * package, where makepkg expects the local `file://…zip` source to sit. An
+	 * explicit `DAVINCI_AUR_DIR` wins; otherwise the existing paru/yay clone dir
+	 * is auto-detected (paru preferred), defaulting to paru when neither exists.
+	 */
+	private resolveAurOutputDir(): string {
+		const override = this.runtime.env.DAVINCI_AUR_DIR;
+		if (override) return override;
+
+		const home = homedir();
+		const paruDir = join(home, '.cache', 'paru', 'clone', 'davinci-resolve');
+		const yayDir = join(home, '.cache', 'yay', 'davinci-resolve');
+
+		if (existsSync(dirname(paruDir))) return paruDir; // ~/.cache/paru/clone
+		if (existsSync(dirname(yayDir))) return yayDir; // ~/.cache/yay
+		return paruDir;
+	}
 
 	parseCliArgs(args: string[]): void {
 		const boolFlags = new Set(['--test', '-t']);
@@ -101,9 +118,9 @@ export class ConfigManager {
 			return 0;
 		}
 
-		// Handle --aur preset: output to yay cache, force linux platform
+		// Handle --aur preset: output to the AUR helper's clone dir, force linux
 		if (arg === '--aur') {
-			this.downloadConfig.outputDir = ConfigManager.AUR_OUTPUT_DIR;
+			this.downloadConfig.outputDir = this.resolveAurOutputDir();
 			this.registrationData.platform = 'linux';
 			return 0;
 		}
@@ -267,7 +284,7 @@ DaVinci Resolve Downloader
 Options:
   -t, --test           Run in test mode (no actual download)
   -o, --output <dir>   Download directory (default: ~/Downloads)
-  --aur                AUR preset: output to ~/.cache/yay/davinci-resolve/, platform linux
+  --aur                AUR preset: output to the paru/yay clone dir, platform linux
   --platform <p>       ${PLATFORMS.join(' | ')} (default: autodetect)
   --region <code>      BMD support region, 2-letter (e.g. gb). Default: geo-detected,
                        with automatic fallback to other regions on failure
@@ -287,6 +304,7 @@ Options:
 Environment Variables:
   DAVINCI_PLATFORM     Override platform autodetection (${PLATFORMS.join(' | ')})
   DAVINCI_REGION       Override BMD support region (2-letter code, e.g. gb)
+  DAVINCI_AUR_DIR      Override the --aur output dir (AUR helper clone dir)
   DAVINCI_FIRSTNAME, DAVINCI_LASTNAME, DAVINCI_EMAIL, DAVINCI_PHONE
   DAVINCI_COUNTRY, DAVINCI_STATE, DAVINCI_CITY, DAVINCI_STREET
   DAVINCI_ZIPCODE, DAVINCI_COMPANY
