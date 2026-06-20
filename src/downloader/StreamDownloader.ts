@@ -48,9 +48,16 @@ export class StreamDownloader {
 				const { done, value } = await reader.read();
 				if (done) break;
 
-				writer.write(Buffer.from(value));
+				const flushed = writer.write(Buffer.from(value));
 				downloaded += value.byteLength;
 				bar.increment(value.byteLength);
+
+				// Honor stream backpressure: when the buffer is full, wait for the
+				// drain event before reading more so chunks don't pile up in memory
+				// if the disk is slower than the network.
+				if (!flushed) {
+					await new Promise<void>((resolve) => writer.once('drain', resolve));
+				}
 			}
 
 			writer.end();

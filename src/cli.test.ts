@@ -24,7 +24,8 @@ describe('dr-downloader command', () => {
 	it('emits structured output in --json mode', async () => {
 		const r = await runCommand(downloadCommand, ['--validate-only'], { jsonMode: true });
 		expect(r.exitCode).toBe(0);
-		expect(r.stdout.join('')).toContain('"valid":true');
+		const payload: { valid?: boolean } = JSON.parse(r.stdout.join(''));
+		expect(payload.valid).toBe(true);
 	});
 
 	it('accepts every supported platform', async () => {

@@ -48,8 +48,8 @@ interface Reporter {
 
 /**
  * Assembles {@link RegistrationData} and {@link DownloadConfig} from resolved
- * flags. Pure aside from `autodetectPlatform` (which may throw on ARM Linux)
- * and the `onWarn` callback for an invalid region. Exported for unit testing.
+ * flags. Reads process state (arch, platform, env) and may throw on ARM Linux
+ * during platform autodetection. Exported for unit testing.
  */
 export function resolveConfig(
 	flags: DownloadFlags,
