@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=https://www.schemastore.org/github-workflow.json
+#
+# Publishes davinci-resolve-downloader to npm.
+#
+# Triggers:
+#   - a published GitHub Release (the normal path) → publishes the version in
+#     package.json, which must match the release tag (e.g. tag v1.0.0-alpha.2).
+#   - manual dispatch → defaults to a dry run; set dry-run=false to publish.
+#
+# Requires repo secret NPM_TOKEN (an npm automation/granular token with publish rights).
+# Provenance is attested via OIDC (`id-token: write`).
+---
+name: Publish to npm
+on:
+  release: { types: [published] }
+  workflow_dispatch: { inputs: { dry-run: { description: "Build and pack, but do not publish", type: boolean, default: true } } }
+
+concurrency: { group: "publish-${{ github.ref }}", cancel-in-progress: false }
+permissions: { contents: read }
+defaults: { run: { shell: pwsh } }
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: { contents: read, id-token: write }
+    environment: { name: npm, url: "${{ steps.meta.outputs.url }}" }
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with: { persist-credentials: false }
+      - name: Build the published package URL
+        id: meta
+        run: |
+          $pkg = Get-Content package.json | ConvertFrom-Json;
+          'url=https://npm.im/package/{0}/v/{1}' -f $pkg.name, $pkg.version >> $env:GITHUB_OUTPUT
+          'VERSION={0}' -f $pkg.version >> $env:GITHUB_ENV
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with: { bun-version: latest }
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with: { node-version-file: .node-version, registry-url: https://registry.npmjs.org }
+      - uses: kjanat/runner@d489a5d3cd4f5283c11c4fa0b77765d0f02c394a # master
+      - name: Install deps (skip the Chrome postinstall)
+        run: bun install --frozen-lockfile --ignore-scripts
+      - run: run -s typecheck lint test build
+      - name: Verify package.json version matches the release tag
+        if: github.event_name == 'release'
+        run: |
+          $pkgVersion = $env:VERSION; $tag = $env:GITHUB_REF_NAME.TrimStart('v');
+          if ( $pkgVersion -ne $tag ) {
+            "::error file=package.json,title=Version mismatch::package.json version ($pkgVersion) != release tag ($tag)";
+            Exit 1
+          }
+      - name: Publish (dry run)
+        if: github.event_name == 'workflow_dispatch' && inputs.dry-run
+        run: bunx npm@latest publish --dry-run --access public
+      - name: Publish
+        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && !inputs.dry-run)
+        run: bunx npm@latest publish --provenance --access public
+        env: { NODE_AUTH_TOKEN: "${{ secrets.NPM_TOKEN }}" }

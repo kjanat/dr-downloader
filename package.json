@@ -1,6 +1,6 @@
 {
 	"name": "davinci-resolve-downloader",
-	"version": "1.0.0-alpha.1",
+	"version": "1.0.0-alpha.2",
 	"description": "Download the free edition of DaVinci Resolve from Blackmagic Design",
 	"keywords": ["davinci resolve", "download", "dreamcli"],
 	"bugs": { "url": "https://github.com/kjanat/dr-downloader/issues" },
@@ -11,6 +11,7 @@
 	"imports": { "#*": "./src/*.ts", "#pkg": "./package.json" },
 	"module": "src/main.ts",
 	"bin": { "dr-downloader": "dist/main.js" },
+	"files": ["dist/main.js"],
 	"scripts": {
 		"build": "bun build src/main.ts --format esm --target node --outdir dist --minify",
 		"dr-downloader": "run start",
@@ -19,7 +20,7 @@
 		"postinstall": "puppeteer browsers install chrome",
 		"lint": "biome lint",
 		"lint:fix": "biome lint --write",
-		"prepublish": "run build",
+		"prepack": "run build",
 		"start": "bun src/main.ts",
 		"typecheck": "tsgo --noEmit"
 	},

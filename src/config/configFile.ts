@@ -1,4 +1,5 @@
 import { DEFAULT_REGISTRATION, DEFAULT_RETRY_ATTEMPTS, DEFAULT_TIMEOUT_MS } from '#config/defaults';
+import { REPO_SLUG } from '#config/repository';
 import pkg from '#pkg' with { type: 'json' };
 import { buildConfigSearchPaths } from '@kjanat/dreamcli';
 import { createAdapter, type RuntimeAdapter } from '@kjanat/dreamcli/runtime';
@@ -10,7 +11,7 @@ import { dirname } from 'node:path';
  * configs as `$schema` so editors offer validation and autocompletion. Built
  * from `package.json`'s `repository` so it tracks the actual repo.
  */
-export const CONFIG_SCHEMA_URL = `https://raw.githubusercontent.com/${pkg.repository}/master/schema/config.schema.json`;
+export const CONFIG_SCHEMA_URL = `https://raw.githubusercontent.com/${REPO_SLUG}/master/schema/config.schema.json`;
 
 /**
  * The global config path dreamcli discovers for this app — the last of its
