@@ -182,7 +182,7 @@ export const downloadCommand = command('dr-downloader')
 	)
 	.flag(
 		'output',
-		flag.string().alias('o').env('DEFAULT_OUTPUT_PATH').config('output').default(defaultOutputDir()).describe(
+		flag.string().alias('o').env('DAVINCI_OUTPUT_DIR').config('output').default(defaultOutputDir()).describe(
 			'Download directory',
 		),
 	)
@@ -196,13 +196,13 @@ export const downloadCommand = command('dr-downloader')
 	)
 	.flag(
 		'timeout',
-		flag.number().env('DOWNLOAD_TIMEOUT_MS').config('timeout').default(DEFAULT_TIMEOUT_MS).describe(
+		flag.number().env('DAVINCI_TIMEOUT_MS').config('timeout').default(DEFAULT_TIMEOUT_MS).describe(
 			'Download timeout in ms',
 		),
 	)
 	.flag(
 		'retry-attempts',
-		flag.number().env('RETRY_ATTEMPTS').config('retryAttempts').default(DEFAULT_RETRY_ATTEMPTS).describe(
+		flag.number().env('DAVINCI_RETRY_ATTEMPTS').config('retryAttempts').default(DEFAULT_RETRY_ATTEMPTS).describe(
 			'Download retry attempts',
 		),
 	)

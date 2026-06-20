@@ -77,11 +77,12 @@ export DAVINCI_EMAIL="you@example.com"
 export DAVINCI_COUNTRY="US"
 export DAVINCI_STATE="California"
 export DAVINCI_REGION="gb"                   # force BMD support region (2-letter)
-export DEFAULT_OUTPUT_PATH="/custom/path"    # override download directory
-export DOWNLOAD_TIMEOUT_MS="900000"          # 15 min default
+export DAVINCI_OUTPUT_DIR="/custom/path"      # override download directory
+export DAVINCI_TIMEOUT_MS="900000"            # download timeout (15 min default)
+export DAVINCI_RETRY_ATTEMPTS="3"             # download retry attempts
 ```
 
-Priority: defaults -> env vars -> CLI args.
+Priority: CLI args -> env vars -> config file -> built-in defaults.
 
 ## How it works
 
