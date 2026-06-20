@@ -1,77 +1,90 @@
-import type { DownloaderOutput } from '#downloader/output';
 import { formatFileSize } from '#utils/formatters';
+import { resolveUserAgent } from '#utils/userAgent';
+import type { Out } from '@kjanat/dreamcli';
 import { createWriteStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 
-// biome-ignore lint/complexity/noStaticOnlyClass: utility class
-export class StreamDownloader {
-	static async download(url: string, outputDir: string, out: DownloaderOutput): Promise<string> {
-		await mkdir(outputDir, { recursive: true });
+export async function download(url: string, outputDir: string, out: Out): Promise<string> {
+	await mkdir(outputDir, { recursive: true });
 
-		// Extract filename from URL
-		const urlPath = new URL(url).pathname;
-		const filename = basename(urlPath) || 'DaVinci_Resolve_Linux.zip';
-		const outputPath = join(outputDir, filename);
+	// Extract filename from URL
+	const urlPath = new URL(url).pathname;
+	const filename = basename(urlPath) || 'DaVinci_Resolve_Linux.zip';
+	const outputPath = join(outputDir, filename);
 
-		const response = await fetch(url, {
-			headers: {
-				'User-Agent':
-					'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-			},
-		});
+	const response = await fetch(url, {
+		// Same identity as the Puppeteer page (honest by default; overridable
+		// via DAVINCI_USER_AGENT) so the page request and the byte download
+		// don't speak with two different voices.
+		headers: { 'User-Agent': resolveUserAgent() },
+	});
 
-		if (!response.ok) {
-			throw new Error(`Download failed: ${response.status} ${response.statusText}`);
-		}
+	if (!response.ok) {
+		throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+	}
 
-		const contentLength = Number(response.headers.get('content-length') || 0);
-		const sizeLabel = contentLength > 0 ? ` (${formatFileSize(contentLength)})` : '';
-		out.log(`📥 Downloading ${filename}${sizeLabel} to ${outputDir}/`);
+	const contentLength = Number(response.headers.get('content-length') || 0);
+	const sizeLabel = contentLength > 0 ? ` (${formatFileSize(contentLength)})` : '';
+	out.log(`📥 Downloading ${filename}${sizeLabel} to ${outputDir}/`);
 
-		const body = response.body;
-		if (!body) throw new Error('No response body');
+	const body = response.body;
+	if (!body) throw new Error('No response body');
 
-		const writer = createWriteStream(outputPath);
-		const reader = body.getReader();
+	const writer = createWriteStream(outputPath);
+	const reader = body.getReader();
 
-		// Determinate bar when the server sends a content-length, otherwise an
-		// indeterminate one. Animates in a TTY; silent in non-TTY / --json.
-		const bar = out.progress({
-			total: contentLength > 0 ? contentLength : undefined,
-			label: filename,
-		});
+	// Attach the error listener the instant the writer exists — before any write
+	// — so a stream failure (e.g. disk full) is handled here instead of crashing
+	// the process as an unhandled 'error' event. Reused across every drain/finish
+	// await below; the no-op `catch` keeps the rejection observed so it never
+	// warns when no await is actively racing it.
+	const writerFailed = new Promise<never>((_resolve, reject) => {
+		writer.once('error', (cause: Error) => reject(cause));
+	});
+	void writerFailed.catch(() => {});
 
-		let downloaded = 0;
-		try {
-			while (true) {
-				const { done, value } = await reader.read();
-				if (done) break;
+	// Determinate bar when the server sends a content-length, otherwise an
+	// indeterminate one. Animates in a TTY; silent in non-TTY / --json.
+	const bar = out.progress({
+		total: contentLength > 0 ? contentLength : undefined,
+		label: filename,
+	});
 
-				const flushed = writer.write(Buffer.from(value));
-				downloaded += value.byteLength;
-				bar.increment(value.byteLength);
+	let downloaded = 0;
+	try {
+		while (true) {
+			const { done, value } = await Promise.race([reader.read(), writerFailed]);
+			if (done) break;
 
-				// Honor stream backpressure: when the buffer is full, wait for the
-				// drain event before reading more so chunks don't pile up in memory
-				// if the disk is slower than the network.
-				if (!flushed) {
-					await new Promise<void>((resolve) => writer.once('drain', resolve));
-				}
+			const flushed = writer.write(Buffer.from(value));
+			downloaded += value.byteLength;
+			bar.increment(value.byteLength);
+
+			// Honor stream backpressure: when the buffer is full, wait for the
+			// drain event before reading more so chunks don't pile up in memory if
+			// the disk is slower than the network. Race against writerFailed so a
+			// write error aborts the wait instead of hanging (an errored stream
+			// never drains).
+			if (!flushed) {
+				await Promise.race([
+					new Promise<void>((resolve) => writer.once('drain', resolve)),
+					writerFailed,
+				]);
 			}
-
-			writer.end();
-			await new Promise<void>((resolve, reject) => {
-				writer.on('finish', resolve);
-				writer.on('error', reject);
-			});
-
-			bar.done(`Download complete: ${filename} (${formatFileSize(downloaded)})`);
-			return outputPath;
-		} catch (e) {
-			bar.fail('Download failed');
-			writer.end();
-			throw e;
 		}
+
+		writer.end();
+		await Promise.race([
+			new Promise<void>((resolve) => writer.once('finish', resolve)),
+			writerFailed,
+		]);
+
+		bar.done(`Download complete: ${filename} (${formatFileSize(downloaded)})`);
+		return outputPath;
+	} catch (e) {
+		bar.fail('Download failed');
+		writer.destroy();
+		throw e;
 	}
 }

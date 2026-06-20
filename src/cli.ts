@@ -1,12 +1,27 @@
 import { resolveAurOutputDir } from '#config/aur';
-import { DEFAULT_REGISTRATION, DEFAULT_RETRY_ATTEMPTS, DEFAULT_TIMEOUT_MS, defaultOutputDir } from '#config/defaults';
+import { defaultConfigPath, writeDefaultConfig } from '#config/configFile';
+import {
+	DEFAULT_REGISTRATION,
+	DEFAULT_RETRY_ATTEMPTS,
+	DEFAULT_TIMEOUT_MS,
+	defaultOutputDir,
+	isPlaceholderRegistration,
+} from '#config/defaults';
 import { autodetectPlatform } from '#config/platform';
 import { normalizeRegion } from '#config/region';
 import type { DownloadConfig, Platform, RegistrationData } from '#config/types';
 import { PLATFORMS } from '#config/types';
 import { DaVinciDownloader } from '#downloader/DaVinciDownloader';
 import pkg from '#pkg' with { type: 'json' };
-import { type ValidationErrors, ValidationService } from '#validation/ValidationService';
+import { openInEditor } from '#utils/editor';
+import {
+	validateEmail,
+	validatePhone,
+	validateRegistrationData,
+	validateRequired,
+	type ValidationErrors,
+} from '#validation/ValidationService';
+import type { Out } from '@kjanat/dreamcli';
 import { cli, CLIError, command, flag } from '@kjanat/dreamcli';
 import { warn } from 'node:console';
 import { arch, env, platform as osPlatform } from 'node:process';
@@ -31,6 +46,7 @@ export interface DownloadFlags {
 	readonly test: boolean;
 	readonly aur: boolean;
 	readonly 'validate-only': boolean;
+	readonly 'init-config': boolean;
 }
 
 /** Domain config assembled from resolved flags, handed to the downloader. */
@@ -38,13 +54,6 @@ export type ResolvedConfig = {
 	readonly registrationData: RegistrationData;
 	readonly downloadConfig: DownloadConfig;
 };
-
-/** Minimal output surface used by the report helpers (subset of dreamcli `Out`). */
-interface Reporter {
-	readonly jsonMode: boolean;
-	log(message: string): void;
-	json(data: unknown): void;
-}
 
 /**
  * Assembles {@link RegistrationData} and {@link DownloadConfig} from resolved
@@ -100,7 +109,7 @@ function configError(errors: ValidationErrors): CLIError {
 	});
 }
 
-function reportValid(data: RegistrationData, out: Reporter): void {
+function reportValid(data: RegistrationData, out: Out): void {
 	if (out.jsonMode) {
 		out.json({ valid: true, registration: data });
 		return;
@@ -119,9 +128,44 @@ function reportValid(data: RegistrationData, out: Reporter): void {
 }
 
 /**
+ * Whether interactive registration prompts should be skipped. The utility modes
+ * (`--init-config`, `--validate-only`) don't download, and `--aur` is the
+ * unattended build path (often chained in a shell function) — all three resolve
+ * to placeholder/CLI values rather than blocking on input. Exported for testing.
+ */
+export function shouldSkipRegistrationPrompts(
+	flags: { readonly aur?: boolean; readonly 'init-config'?: boolean; readonly 'validate-only'?: boolean },
+): boolean {
+	return Boolean(flags.aur || flags['init-config'] || flags['validate-only']);
+}
+
+/** Prompt validator for a required free-text field (rejects empty). */
+export function promptRequired(label: string): (value: string) => true | string {
+	return (value) => {
+		const result = validateRequired(value, label);
+		return result.isValid ? true : result.error ?? `${label} is required`;
+	};
+}
+
+/** Prompt validator for the email field: required, then BMD's exact format. */
+export function promptEmail(value: string): true | string {
+	if (value.trim() === '') return 'Email is required';
+	const result = validateEmail(value);
+	return result.isValid ? true : result.error ?? 'Please enter a valid email address';
+}
+
+/** Prompt validator for the phone field: required (the form marks it `*`), then BMD's format. */
+export function promptPhone(value: string): true | string {
+	if (value.trim() === '') return 'Phone is required';
+	const result = validatePhone(value);
+	return result.isValid ? true : result.error ?? 'Please enter a valid phone number';
+}
+
+/**
  * The single download command. Flags resolve through dreamcli's
- * CLI -> env -> config -> default chain; `.derive()` assembles the domain
- * config (so the action stays thin), and `.action()` validates, optionally
+ * CLI -> env -> config -> prompt -> default chain. `.interactive()` asks for the
+ * personal-identity fields on a bare interactive run; `.derive()` assembles the
+ * domain config (so the action stays thin); `.action()` validates, optionally
  * reports (`--validate-only`), and otherwise runs the download.
  */
 export const downloadCommand = command('dr-downloader')
@@ -209,13 +253,56 @@ export const downloadCommand = command('dr-downloader')
 	.flag('test', flag.boolean().alias('t').default(false).describe('Test mode: fill form, skip download'))
 	.flag('aur', flag.boolean().default(false).describe('AUR preset: output to the paru/yay clone dir, platform linux'))
 	.flag('validate-only', flag.boolean().default(false).describe('Validate configuration and exit'))
+	.flag(
+		'init-config',
+		flag.boolean().default(false).describe('Write a starter config file (with $schema) and open it in your editor'),
+	)
+	.interactive(({ flags }) =>
+		// Prompt the personal-identity fields (what BMD's CRM keys a lead on) on a
+		// bare interactive run. Fields already supplied via CLI/env/config are
+		// skipped by the resolver; non-TTY contexts have no prompter, so these fall
+		// back to the placeholder defaults (which then trigger the placeholder
+		// nudge). Address fields stay at placeholder unless explicitly provided.
+		shouldSkipRegistrationPrompts(flags)
+			? {}
+			: {
+				firstname: { kind: 'input', message: 'First name', validate: promptRequired('First name') },
+				lastname: { kind: 'input', message: 'Last name', validate: promptRequired('Last name') },
+				email: { kind: 'input', message: 'Email', validate: promptEmail },
+				phone: { kind: 'input', message: 'Phone', validate: promptPhone },
+			}
+	)
 	.derive(({ flags, out }) => resolveConfig(flags, (message) => out.warn(message)))
 	.action(async ({ flags, ctx, out }) => {
+		// `--init-config` is a standalone action: write the starter config and
+		// open it, ignoring the rest of the resolution. Runs before validation so
+		// it works regardless of what the (placeholder) defaults look like.
+		if (flags['init-config']) {
+			const { path, created } = await writeDefaultConfig(defaultConfigPath());
+			out.log(created ? `📝 Wrote starter config to ${path}` : `📝 Config already exists at ${path}`);
+			out.log('   Edit your details there; CLI flags and DAVINCI_* env vars still override it.');
+			await openInEditor(path);
+			return;
+		}
+
 		const { registrationData, downloadConfig } = ctx;
 
-		const validation = ValidationService.validateRegistrationData(registrationData);
+		const validation = validateRegistrationData(registrationData);
 		if (!validation.isValid) {
 			throw configError(validation.errors);
+		}
+
+		// Nudge: a bare run submits obviously-fake placeholder data to BMD. Warn
+		// (to stderr) so the user knows to supply their own, the same details
+		// they'd type into the form by hand. Skipped in --json mode, where a
+		// machine consumer can see the placeholder email in the payload itself.
+		if (!out.jsonMode && isPlaceholderRegistration(registrationData)) {
+			out.warn(
+				`Using placeholder registration data (${registrationData.firstname} `
+					+ `${registrationData.lastname} <${registrationData.email}>) — this is what gets `
+					+ 'submitted to Blackmagic Design. Provide your own with --firstname/--lastname/'
+					+ '--email, DAVINCI_* env vars, or a config file.',
+			);
 		}
 
 		if (flags['validate-only']) {
