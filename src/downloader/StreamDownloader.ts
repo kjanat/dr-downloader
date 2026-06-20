@@ -1,20 +1,18 @@
+import type { DownloaderOutput } from '#downloader/output';
 import { formatFileSize } from '#utils/formatters';
-import { log } from 'node:console';
 import { createWriteStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 
 // biome-ignore lint/complexity/noStaticOnlyClass: utility class
 export class StreamDownloader {
-	static async download(url: string, outputDir: string): Promise<string> {
+	static async download(url: string, outputDir: string, out: DownloaderOutput): Promise<string> {
 		await mkdir(outputDir, { recursive: true });
 
 		// Extract filename from URL
 		const urlPath = new URL(url).pathname;
 		const filename = basename(urlPath) || 'DaVinci_Resolve_Linux.zip';
 		const outputPath = join(outputDir, filename);
-
-		log(`📥 Downloading ${filename} to ${outputDir}/`);
 
 		const response = await fetch(url, {
 			headers: {
@@ -28,7 +26,8 @@ export class StreamDownloader {
 		}
 
 		const contentLength = Number(response.headers.get('content-length') || 0);
-		if (contentLength > 0) log(`📦 File size: ${formatFileSize(contentLength)}`);
+		const sizeLabel = contentLength > 0 ? ` (${formatFileSize(contentLength)})` : '';
+		out.log(`📥 Downloading ${filename}${sizeLabel} to ${outputDir}/`);
 
 		const body = response.body;
 		if (!body) throw new Error('No response body');
@@ -36,10 +35,14 @@ export class StreamDownloader {
 		const writer = createWriteStream(outputPath);
 		const reader = body.getReader();
 
-		let downloaded = 0;
-		let lastLogTime = 0;
-		const logInterval = 3000; // Log progress every 3 seconds
+		// Determinate bar when the server sends a content-length, otherwise an
+		// indeterminate one. Animates in a TTY; silent in non-TTY / --json.
+		const bar = out.progress({
+			total: contentLength > 0 ? contentLength : undefined,
+			label: filename,
+		});
 
+		let downloaded = 0;
 		try {
 			while (true) {
 				const { done, value } = await reader.read();
@@ -47,27 +50,21 @@ export class StreamDownloader {
 
 				writer.write(Buffer.from(value));
 				downloaded += value.byteLength;
-
-				const now = Date.now();
-				if (now - lastLogTime > logInterval) {
-					lastLogTime = now;
-					const pct = contentLength > 0
-						? ` (${((downloaded / contentLength) * 100).toFixed(1)}%)`
-						: '';
-					log(`📥 Downloaded: ${formatFileSize(downloaded)}${pct}`);
-				}
+				bar.increment(value.byteLength);
 			}
-		} finally {
+
 			writer.end();
+			await new Promise<void>((resolve, reject) => {
+				writer.on('finish', resolve);
+				writer.on('error', reject);
+			});
+
+			bar.done(`Download complete: ${filename} (${formatFileSize(downloaded)})`);
+			return outputPath;
+		} catch (e) {
+			bar.fail('Download failed');
+			writer.end();
+			throw e;
 		}
-
-		// Wait for writer to finish
-		await new Promise<void>((resolve, reject) => {
-			writer.on('finish', resolve);
-			writer.on('error', reject);
-		});
-
-		log(`✅ Download complete: ${filename} (${formatFileSize(downloaded)})`);
-		return outputPath;
 	}
 }
