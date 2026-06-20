@@ -1,13 +1,13 @@
-import type { DownloaderOutput } from '#downloader/output';
 import { formatFileSize } from '#utils/formatters';
 import { resolveUserAgent } from '#utils/userAgent';
+import type { Out } from '@kjanat/dreamcli';
 import { createWriteStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 
 // biome-ignore lint/complexity/noStaticOnlyClass: utility class
 export class StreamDownloader {
-	static async download(url: string, outputDir: string, out: DownloaderOutput): Promise<string> {
+	static async download(url: string, outputDir: string, out: Out): Promise<string> {
 		await mkdir(outputDir, { recursive: true });
 
 		// Extract filename from URL

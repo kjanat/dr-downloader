@@ -15,6 +15,7 @@ import { DaVinciDownloader } from '#downloader/DaVinciDownloader';
 import pkg from '#pkg' with { type: 'json' };
 import { openInEditor } from '#utils/editor';
 import { type ValidationErrors, ValidationService } from '#validation/ValidationService';
+import type { Out } from '@kjanat/dreamcli';
 import { cli, CLIError, command, flag } from '@kjanat/dreamcli';
 import { warn } from 'node:console';
 import { arch, env, platform as osPlatform } from 'node:process';
@@ -47,13 +48,6 @@ export type ResolvedConfig = {
 	readonly registrationData: RegistrationData;
 	readonly downloadConfig: DownloadConfig;
 };
-
-/** Minimal output surface used by the report helpers (subset of dreamcli `Out`). */
-interface Reporter {
-	readonly jsonMode: boolean;
-	log(message: string): void;
-	json(data: unknown): void;
-}
 
 /**
  * Assembles {@link RegistrationData} and {@link DownloadConfig} from resolved
@@ -109,7 +103,7 @@ function configError(errors: ValidationErrors): CLIError {
 	});
 }
 
-function reportValid(data: RegistrationData, out: Reporter): void {
+function reportValid(data: RegistrationData, out: Out): void {
 	if (out.jsonMode) {
 		out.json({ valid: true, registration: data });
 		return;

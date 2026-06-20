@@ -99,8 +99,9 @@ The fastest way to create one is `dr-downloader --init-config`: it writes a
 fully-populated starter file to the XDG path above (without clobbering an
 existing one) and opens it in your editor. The file is pre-wired with a
 [`$schema`](schema/config.schema.json) reference, so editors that understand
-JSON Schema give you autocompletion and validate fields the same way BMD's
-registration form does (email/phone format, 2-letter region, etc.).
+JSON Schema give you autocompletion (a dropdown of valid `country` and `region`
+codes) and validate fields the same way BMD's registration form does
+(email/phone format, etc.).
 
 Keys match the flag names:
 

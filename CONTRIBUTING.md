@@ -14,7 +14,8 @@ bun run build        # bundle to dist/
 
 ## CI
 
-A GitHub Actions workflow (`.github/workflows/download.yml`) can run the download on `workflow_dispatch` and upload the artifact.
+A GitHub Actions workflow (`.github/workflows/download.yml`) can run the
+download on `workflow_dispatch` and upload the artifact.
 
 ## Project structure
 

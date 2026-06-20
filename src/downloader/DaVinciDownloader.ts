@@ -1,8 +1,8 @@
 import type { DownloadConfig, Platform, RegistrationData } from '#config/types';
 import { FormHandler } from '#downloader/FormHandler';
-import type { DownloaderOutput, Spinner } from '#downloader/output';
 import { StreamDownloader } from '#downloader/StreamDownloader';
 import { createBrowser, createPage } from '#utils/browser';
+import type { Out, SpinnerHandle } from '@kjanat/dreamcli';
 import { osc8, visibleWidth } from '@kjanat/dreamcli';
 import { exit, stdout } from 'node:process';
 import type { Page } from 'puppeteer';
@@ -20,7 +20,7 @@ export class DaVinciDownloader {
 	constructor(
 		private readonly registrationData: RegistrationData,
 		private readonly downloadConfig: DownloadConfig,
-		private readonly out: DownloaderOutput,
+		private readonly out: Out,
 	) {}
 
 	async run(): Promise<void> {
@@ -90,7 +90,7 @@ export class DaVinciDownloader {
 	private async openRegistrationForm(
 		page: Page,
 		platform: Platform,
-		spin: Spinner,
+		spin: SpinnerHandle,
 	): Promise<void> {
 		const maxAttempts = 4;
 		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -130,7 +130,7 @@ export class DaVinciDownloader {
 		page: Page,
 		platform: Platform,
 		region: string | null,
-		spin: Spinner,
+		spin: SpinnerHandle,
 	): Promise<{ ok: true } | { ok: false; error: string }> {
 		try {
 			spin.update('Opening the download modal...');
