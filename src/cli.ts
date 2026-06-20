@@ -14,7 +14,7 @@ import { PLATFORMS } from '#config/types';
 import { DaVinciDownloader } from '#downloader/DaVinciDownloader';
 import pkg from '#pkg' with { type: 'json' };
 import { openInEditor } from '#utils/editor';
-import { type ValidationErrors, ValidationService } from '#validation/ValidationService';
+import { validateRegistrationData, type ValidationErrors } from '#validation/ValidationService';
 import type { Out } from '@kjanat/dreamcli';
 import { cli, CLIError, command, flag } from '@kjanat/dreamcli';
 import { warn } from 'node:console';
@@ -231,7 +231,7 @@ export const downloadCommand = command('dr-downloader')
 
 		const { registrationData, downloadConfig } = ctx;
 
-		const validation = ValidationService.validateRegistrationData(registrationData);
+		const validation = validateRegistrationData(registrationData);
 		if (!validation.isValid) {
 			throw configError(validation.errors);
 		}

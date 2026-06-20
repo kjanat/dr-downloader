@@ -1,4 +1,12 @@
-import { ValidationService } from '#validation/ValidationService';
+import {
+	validateCountry,
+	validateEmail,
+	validatePhone,
+	validateRegistrationData,
+	validateRequired,
+	validateState,
+	validateZipcode,
+} from '#validation/ValidationService';
 import { describe, expect, it } from 'bun:test';
 
 describe('ValidationService', () => {
@@ -15,7 +23,7 @@ describe('ValidationService', () => {
 			];
 
 			validEmails.forEach((email) => {
-				const result = ValidationService.validateEmail(email);
+				const result = validateEmail(email);
 				expect(result.isValid).toBe(true);
 				expect(result.error).toBeUndefined();
 			});
@@ -39,20 +47,20 @@ describe('ValidationService', () => {
 			];
 
 			invalidEmails.forEach((email) => {
-				const result = ValidationService.validateEmail(email);
+				const result = validateEmail(email);
 				expect(result.isValid).toBe(false);
 				expect(result.error).toBe('Please enter a valid email address');
 			});
 		});
 
 		it('should accept empty email (BMD allows optional)', () => {
-			const result = ValidationService.validateEmail('');
+			const result = validateEmail('');
 			expect(result.isValid).toBe(true);
 			expect(result.error).toBeUndefined();
 		});
 
 		it('should accept whitespace-only email as empty', () => {
-			const result = ValidationService.validateEmail('   ');
+			const result = validateEmail('   ');
 			expect(result.isValid).toBe(true);
 			expect(result.error).toBeUndefined();
 		});
@@ -73,7 +81,7 @@ describe('ValidationService', () => {
 			];
 
 			validPhones.forEach((phone) => {
-				const result = ValidationService.validatePhone(phone);
+				const result = validatePhone(phone);
 				expect(result.isValid).toBe(true);
 				expect(result.error).toBeUndefined();
 			});
@@ -91,7 +99,7 @@ describe('ValidationService', () => {
 			];
 
 			invalidPhones.forEach((phone) => {
-				const result = ValidationService.validatePhone(phone);
+				const result = validatePhone(phone);
 				expect(result.isValid).toBe(false);
 				expect(result.error).toBe(
 					'Phone number can only contain numbers, spaces, parentheses, plus and minus signs',
@@ -100,7 +108,7 @@ describe('ValidationService', () => {
 		});
 
 		it('should accept empty phone (BMD allows optional)', () => {
-			const result = ValidationService.validatePhone('');
+			const result = validatePhone('');
 			expect(result.isValid).toBe(true);
 			expect(result.error).toBeUndefined();
 		});
@@ -108,19 +116,19 @@ describe('ValidationService', () => {
 
 	describe('Required Field Validation', () => {
 		it('should require non-empty values', () => {
-			const result = ValidationService.validateRequired('John', 'First Name');
+			const result = validateRequired('John', 'First Name');
 			expect(result.isValid).toBe(true);
 			expect(result.error).toBeUndefined();
 		});
 
 		it('should reject empty values', () => {
-			const result = ValidationService.validateRequired('', 'First Name');
+			const result = validateRequired('', 'First Name');
 			expect(result.isValid).toBe(false);
 			expect(result.error).toBe('First Name is required');
 		});
 
 		it('should reject whitespace-only values', () => {
-			const result = ValidationService.validateRequired('   ', 'Last Name');
+			const result = validateRequired('   ', 'Last Name');
 			expect(result.isValid).toBe(false);
 			expect(result.error).toBe('Last Name is required');
 		});
@@ -138,7 +146,7 @@ describe('ValidationService', () => {
 			];
 
 			validZipcodes.forEach((zipcode) => {
-				const result = ValidationService.validateZipcode(zipcode);
+				const result = validateZipcode(zipcode);
 				expect(result.isValid).toBe(true);
 				expect(result.error).toBeUndefined();
 			});
@@ -154,7 +162,7 @@ describe('ValidationService', () => {
 			];
 
 			invalidZipcodes.forEach((zipcode) => {
-				const result = ValidationService.validateZipcode(zipcode);
+				const result = validateZipcode(zipcode);
 				expect(result.isValid).toBe(false);
 				expect(result.error).toBe(
 					zipcode.trim() === ''
@@ -177,14 +185,14 @@ describe('ValidationService', () => {
 			];
 
 			validCountries.forEach((country) => {
-				const result = ValidationService.validateCountry(country);
+				const result = validateCountry(country);
 				expect(result.isValid).toBe(true);
 				expect(result.error).toBeUndefined();
 			});
 		});
 
 		it('should reject invalid countries', () => {
-			const result = ValidationService.validateCountry('');
+			const result = validateCountry('');
 			expect(result.isValid).toBe(false);
 			expect(result.error).toBe('Country is required');
 		});
@@ -192,25 +200,25 @@ describe('ValidationService', () => {
 
 	describe('State Validation', () => {
 		it('should require state for US', () => {
-			const result = ValidationService.validateState('', 'US');
+			const result = validateState('', 'US');
 			expect(result.isValid).toBe(false);
 			expect(result.error).toBe('State/Province is required');
 		});
 
 		it('should accept state for US', () => {
-			const result = ValidationService.validateState('New York', 'US');
+			const result = validateState('New York', 'US');
 			expect(result.isValid).toBe(true);
 			expect(result.error).toBeUndefined();
 		});
 
 		it('should not require state for non-state countries', () => {
-			const result = ValidationService.validateState('', 'UK');
+			const result = validateState('', 'UK');
 			expect(result.isValid).toBe(true);
 			expect(result.error).toBeUndefined();
 		});
 
 		it('should handle string: prefix in country', () => {
-			const result = ValidationService.validateState('', 'string:US');
+			const result = validateState('', 'string:US');
 			expect(result.isValid).toBe(false);
 			expect(result.error).toBe('State/Province is required');
 		});
@@ -231,7 +239,7 @@ describe('ValidationService', () => {
 				company: 'Test Company',
 			};
 
-			const result = ValidationService.validateRegistrationData(validData);
+			const result = validateRegistrationData(validData);
 			expect(result.isValid).toBe(true);
 			expect(Object.keys(result.errors)).toHaveLength(0);
 		});
@@ -250,7 +258,7 @@ describe('ValidationService', () => {
 				// company omitted (optional)
 			};
 
-			const result = ValidationService.validateRegistrationData(
+			const result = validateRegistrationData(
 				dataWithOptionalFields,
 			);
 			expect(result.isValid).toBe(true);
@@ -270,7 +278,7 @@ describe('ValidationService', () => {
 				zipcode: '',
 			};
 
-			const result = ValidationService.validateRegistrationData(invalidData);
+			const result = validateRegistrationData(invalidData);
 			expect(result.isValid).toBe(false);
 
 			// Check that multiple errors are collected
@@ -298,7 +306,7 @@ describe('ValidationService', () => {
 				zipcode: '10001',
 			};
 
-			const result = ValidationService.validateRegistrationData(usDataNoState);
+			const result = validateRegistrationData(usDataNoState);
 			expect(result.isValid).toBe(false);
 			expect(result.errors.state).toBe('State/Province is required');
 		});
@@ -315,7 +323,7 @@ describe('ValidationService', () => {
 				zipcode: '10001',
 			};
 
-			const result = ValidationService.validateRegistrationData(bmdFormatData);
+			const result = validateRegistrationData(bmdFormatData);
 			expect(result.isValid).toBe(true);
 			expect(Object.keys(result.errors)).toHaveLength(0);
 		});
@@ -323,7 +331,7 @@ describe('ValidationService', () => {
 
 	describe('Edge Cases', () => {
 		it('should handle null and undefined values', () => {
-			const result = ValidationService.validateRegistrationData({
+			const result = validateRegistrationData({
 				firstname: undefined as any,
 				lastname: null as any,
 				email: undefined as any,
@@ -341,7 +349,7 @@ describe('ValidationService', () => {
 
 		it('should handle very long email addresses', () => {
 			const longEmail = `${'a'.repeat(64)}@${'b'.repeat(63)}.com`;
-			const result = ValidationService.validateEmail(longEmail);
+			const result = validateEmail(longEmail);
 			// Should validate based on pattern, not length
 			expect(result.isValid).toBe(true);
 		});
@@ -354,7 +362,7 @@ describe('ValidationService', () => {
 			];
 
 			intlPhones.forEach((phone) => {
-				const result = ValidationService.validatePhone(phone);
+				const result = validatePhone(phone);
 				expect(result.isValid).toBe(true);
 			});
 		});

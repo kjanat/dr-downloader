@@ -1,6 +1,15 @@
 import type { RegistrationData } from '#config/types';
 import { SELECTORS } from '#constants/selectors';
-import { type ValidationErrors, ValidationService } from '#validation/ValidationService';
+import {
+	validateCountry,
+	validateEmail,
+	validatePhone,
+	validateRegistrationData,
+	validateRequired,
+	validateState,
+	validateZipcode,
+	type ValidationErrors,
+} from '#validation/ValidationService';
 import { log, warn } from 'node:console';
 import type { Page } from 'puppeteer';
 
@@ -51,20 +60,20 @@ export class FormHandler {
 	): { isValid: boolean; error?: string } {
 		switch (fieldName) {
 			case 'email':
-				return ValidationService.validateEmail(value);
+				return validateEmail(value);
 			case 'phone':
-				return ValidationService.validatePhone(value);
+				return validatePhone(value);
 			case 'firstname':
 			case 'lastname':
 			case 'city':
 			case 'street':
-				return ValidationService.validateRequired(value, fieldName);
+				return validateRequired(value, fieldName);
 			case 'zipcode':
-				return ValidationService.validateZipcode(value);
+				return validateZipcode(value);
 			case 'country':
-				return ValidationService.validateCountry(value);
+				return validateCountry(value);
 			case 'state':
-				return ValidationService.validateState(value, context?.country || '');
+				return validateState(value, context?.country || '');
 			default:
 				return { isValid: true };
 		}
@@ -236,6 +245,6 @@ export class FormHandler {
 		isValid: boolean;
 		errors: ValidationErrors;
 	} {
-		return ValidationService.validateRegistrationData(data);
+		return validateRegistrationData(data);
 	}
 }
