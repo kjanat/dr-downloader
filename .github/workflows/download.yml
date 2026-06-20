@@ -8,13 +8,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
-        with: { node-version: lts/* }
+        with: { node-version: latest }
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: latest }
-      - name: Install dependencies
-        run: bun i
-      - name: Download davinci-resolve
-        run: bun run start
+      - uses: kjanat/runner@master
+      - run: runner install --frozen start
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v6
