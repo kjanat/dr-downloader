@@ -58,4 +58,3 @@ jobs:
       - name: Publish
         if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && !inputs.dry-run)
         run: bunx npm@latest publish --provenance --access public --tag $env:NPM_TAG
-        env: { NODE_AUTH_TOKEN: "${{ secrets.NPM_TOKEN }}" }
