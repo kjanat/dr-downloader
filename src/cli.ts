@@ -14,7 +14,13 @@ import { PLATFORMS } from '#config/types';
 import { DaVinciDownloader } from '#downloader/DaVinciDownloader';
 import pkg from '#pkg' with { type: 'json' };
 import { openInEditor } from '#utils/editor';
-import { validateRegistrationData, type ValidationErrors } from '#validation/ValidationService';
+import {
+	validateEmail,
+	validatePhone,
+	validateRegistrationData,
+	validateRequired,
+	type ValidationErrors,
+} from '#validation/ValidationService';
 import type { Out } from '@kjanat/dreamcli';
 import { cli, CLIError, command, flag } from '@kjanat/dreamcli';
 import { warn } from 'node:console';
@@ -122,9 +128,44 @@ function reportValid(data: RegistrationData, out: Out): void {
 }
 
 /**
+ * Whether interactive registration prompts should be skipped. The utility modes
+ * (`--init-config`, `--validate-only`) don't download, and `--aur` is the
+ * unattended build path (often chained in a shell function) — all three resolve
+ * to placeholder/CLI values rather than blocking on input. Exported for testing.
+ */
+export function shouldSkipRegistrationPrompts(
+	flags: { readonly aur?: boolean; readonly 'init-config'?: boolean; readonly 'validate-only'?: boolean },
+): boolean {
+	return Boolean(flags.aur || flags['init-config'] || flags['validate-only']);
+}
+
+/** Prompt validator for a required free-text field (rejects empty). */
+export function promptRequired(label: string): (value: string) => true | string {
+	return (value) => {
+		const result = validateRequired(value, label);
+		return result.isValid ? true : result.error ?? `${label} is required`;
+	};
+}
+
+/** Prompt validator for the email field: required, then BMD's exact format. */
+export function promptEmail(value: string): true | string {
+	if (value.trim() === '') return 'Email is required';
+	const result = validateEmail(value);
+	return result.isValid ? true : result.error ?? 'Please enter a valid email address';
+}
+
+/** Prompt validator for the phone field: required (the form marks it `*`), then BMD's format. */
+export function promptPhone(value: string): true | string {
+	if (value.trim() === '') return 'Phone is required';
+	const result = validatePhone(value);
+	return result.isValid ? true : result.error ?? 'Please enter a valid phone number';
+}
+
+/**
  * The single download command. Flags resolve through dreamcli's
- * CLI -> env -> config -> default chain; `.derive()` assembles the domain
- * config (so the action stays thin), and `.action()` validates, optionally
+ * CLI -> env -> config -> prompt -> default chain. `.interactive()` asks for the
+ * personal-identity fields on a bare interactive run; `.derive()` assembles the
+ * domain config (so the action stays thin); `.action()` validates, optionally
  * reports (`--validate-only`), and otherwise runs the download.
  */
 export const downloadCommand = command('dr-downloader')
@@ -215,6 +256,21 @@ export const downloadCommand = command('dr-downloader')
 	.flag(
 		'init-config',
 		flag.boolean().default(false).describe('Write a starter config file (with $schema) and open it in your editor'),
+	)
+	.interactive(({ flags }) =>
+		// Prompt the personal-identity fields (what BMD's CRM keys a lead on) on a
+		// bare interactive run. Fields already supplied via CLI/env/config are
+		// skipped by the resolver; non-TTY contexts have no prompter, so these fall
+		// back to the placeholder defaults (which then trigger the placeholder
+		// nudge). Address fields stay at placeholder unless explicitly provided.
+		shouldSkipRegistrationPrompts(flags)
+			? {}
+			: {
+				firstname: { kind: 'input', message: 'First name', validate: promptRequired('First name') },
+				lastname: { kind: 'input', message: 'Last name', validate: promptRequired('Last name') },
+				email: { kind: 'input', message: 'Email', validate: promptEmail },
+				phone: { kind: 'input', message: 'Phone', validate: promptPhone },
+			}
 	)
 	.derive(({ flags, out }) => resolveConfig(flags, (message) => out.warn(message)))
 	.action(async ({ flags, ctx, out }) => {

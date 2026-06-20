@@ -69,6 +69,24 @@ dr-downloader --help                       # show all options
 | `-t, --test`         | Test mode: no actual download                                         |
 | `--init-config`      | Write a starter config file (with `$schema`) and open it in `$EDITOR` |
 
+### Registration details
+
+On a plain interactive run (`dr-downloader` in a terminal), the tool prompts for
+the personal-identity fields BMD's form requires — **First name**, **Last
+name**, **Email**, **Phone** — when you haven't already supplied them. That's
+the same info you'd type into the form by hand, so you register as yourself
+instead of as the placeholder. Anything provided via a flag, `DAVINCI_*` env
+var, or a config file is used as-is and skips its prompt.
+
+Prompts are skipped when there's nothing to interactively type into:
+
+- **non-interactive contexts** (CI, piped input, the chained AUR build) — falls
+  back to the obviously-fake placeholder data (and warns you it did)
+- **`--aur`** (the unattended build path), **`--init-config`**, **`--validate-only`**
+
+The address fields stay at their placeholder/config/flag value; only the
+identity fields are prompted.
+
 ### Environment variables
 
 All registration fields can be set via `DAVINCI_*` env vars. CLI args take precedence.

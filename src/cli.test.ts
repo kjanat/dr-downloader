@@ -1,4 +1,12 @@
-import { downloadCommand, type DownloadFlags, resolveConfig } from '#cli';
+import {
+	downloadCommand,
+	type DownloadFlags,
+	promptEmail,
+	promptPhone,
+	promptRequired,
+	resolveConfig,
+	shouldSkipRegistrationPrompts,
+} from '#cli';
 import { runCommand } from '@kjanat/dreamcli/testkit';
 import { describe, expect, it } from 'bun:test';
 
@@ -54,6 +62,48 @@ describe('dr-downloader command', () => {
 	it('omits the nudge from stdout in --json mode (machine consumers parse the email)', async () => {
 		const r = await runCommand(downloadCommand, ['--validate-only'], { jsonMode: true });
 		expect(r.stdout.join('')).not.toContain('placeholder registration data');
+	});
+
+	it('does not consume prompt answers in a suppressed mode (--validate-only)', async () => {
+		// Even with answers queued, validate-only suppresses prompts, so the
+		// placeholder defaults survive (answers are never read).
+		const r = await runCommand(downloadCommand, ['--validate-only'], {
+			answers: ['Real', 'Person', 'real@person.com', '+1 555 0100'],
+		});
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout.join('')).toContain('Placeholder User');
+		expect(r.stdout.join('')).not.toContain('real@person.com');
+	});
+});
+
+describe('registration prompt gating', () => {
+	it('prompts on a bare interactive run', () => {
+		expect(shouldSkipRegistrationPrompts({})).toBe(false);
+	});
+
+	it('suppresses prompts for --aur, --init-config, and --validate-only', () => {
+		expect(shouldSkipRegistrationPrompts({ aur: true })).toBe(true);
+		expect(shouldSkipRegistrationPrompts({ 'init-config': true })).toBe(true);
+		expect(shouldSkipRegistrationPrompts({ 'validate-only': true })).toBe(true);
+	});
+});
+
+describe('prompt validators', () => {
+	it('promptRequired rejects empty and accepts non-empty', () => {
+		expect(promptRequired('First name')('')).toBe('First name is required');
+		expect(promptRequired('First name')('Ada')).toBe(true);
+	});
+
+	it('promptEmail rejects empty and malformed, accepts valid', () => {
+		expect(promptEmail('')).toBe('Email is required');
+		expect(typeof promptEmail('not-an-email')).toBe('string');
+		expect(promptEmail('ada@example.com')).toBe(true);
+	});
+
+	it('promptPhone rejects empty and malformed, accepts valid (BMD marks it required)', () => {
+		expect(promptPhone('')).toBe('Phone is required');
+		expect(typeof promptPhone('abc')).toBe('string');
+		expect(promptPhone('+1 (555) 010-0100')).toBe(true);
 	});
 });
 
