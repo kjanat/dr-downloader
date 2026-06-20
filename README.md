@@ -2,7 +2,8 @@
 
 Automated downloader for [DaVinci Resolve] (free edition).\
 Uses Puppeteer to navigate BMD's AngularJS registration form, capture the CDN
-download URL, and stream the file to disk.
+download URL, and stream the file to disk. The CLI is built with
+[@kjanat/dreamcli].
 
 ## Why
 
@@ -21,18 +22,41 @@ This tool solves that by downloading the file first.
 ## Quick start
 
 ```bash
-# install globally
-bun install -g davinci-resolve-downloader
+# run directly (no install)
+npx davinci-resolve-downloader
 
-# or run directly
-bunx davinci-resolve-downloader
+# or install globally, then run `dr-downloader`
+npm install -g davinci-resolve-downloader
+dr-downloader
 ```
 
 Downloads to `~/Downloads/` by default.
 
+<details>
+<summary>Bun, pnpm, or Deno</summary>
+
+```bash
+# Bun
+bunx davinci-resolve-downloader              # or: bun install -g davinci-resolve-downloader
+
+# pnpm
+pnpm dlx davinci-resolve-downloader          # or: pnpm add -g davinci-resolve-downloader
+
+# Deno
+deno run -A npm:davinci-resolve-downloader
+```
+
+Deno doesn't run npm `postinstall`, so it won't auto-download Chrome — point
+Puppeteer at an existing browser via `PUPPETEER_EXECUTABLE_PATH` when using it.
+
+</details>
+
+> Installing pulls in Chrome via Puppeteer's `postinstall` hook — the first
+> install does a one-time browser download.
+
 ### Prerequisites
 
-- [Bun] (or Node.js with npm/npx)
+- Node.js with `npm`/`npx` (default) — or [Bun], pnpm, or Deno
 - Chrome (auto-installed by Puppeteer via `postinstall`)
 
 ## Usage
@@ -40,7 +64,7 @@ Downloads to `~/Downloads/` by default.
 ```bash
 dr-downloader                              # download (defaults to ~/Downloads/)
 dr-downloader -o ./my-dir                  # custom output directory
-dr-downloader --platform mac               # linux | mac | windows (default: autodetect)
+dr-downloader --platform mac               # linux | mac | windows | winarm (default: autodetect)
 dr-downloader --email you@example.com      # override registration fields
 dr-downloader --validate-only              # validate config without downloading
 dr-downloader --test                       # test mode: fill form, skip download
@@ -49,25 +73,26 @@ dr-downloader --help                       # show all options
 
 ### CLI flags
 
-| Flag                 | Description                                                           |
-| -------------------- | --------------------------------------------------------------------- |
-| `-o, --output <dir>` | Download directory (default: `~/Downloads`)                           |
-| `--aur`              | AUR preset: output to `~/.cache/yay/davinci-resolve/`                 |
-| `--platform <p>`     | `linux`, `mac`, `windows` (default: autodetect)                       |
-| `--region <code>`    | BMD support region, 2-letter (e.g. `gb`); default: geo                |
-| `--firstname <name>` | First name                                                            |
-| `--lastname <name>`  | Last name                                                             |
-| `--email <email>`    | Email address                                                         |
-| `--phone <phone>`    | Phone number                                                          |
-| `--country <code>`   | Country code or full name (e.g. `US`)                                 |
-| `--state <state>`    | State/province (required for US/CA)                                   |
-| `--city <city>`      | City                                                                  |
-| `--street <addr>`    | Street address                                                        |
-| `--zipcode <zip>`    | Postal code                                                           |
-| `--company <name>`   | Company (optional)                                                    |
-| `--validate-only`    | Validate config and exit                                              |
-| `-t, --test`         | Test mode: no actual download                                         |
-| `--init-config`      | Write a starter config file (with `$schema`) and open it in `$EDITOR` |
+| Flag                 | Description                                                                     |
+| -------------------- | ------------------------------------------------------------------------------- |
+| `-o, --output <dir>` | Download directory (default: `~/Downloads`)                                     |
+| `--aur`              | AUR preset: output to the paru/yay clone dir (paru preferred), platform `linux` |
+| `--platform <p>`     | `linux`, `mac`, `windows`, `winarm` (default: autodetect)                       |
+| `--region <code>`    | BMD support region, 2-letter (e.g. `gb`); default: geo                          |
+| `--firstname <name>` | First name                                                                      |
+| `--lastname <name>`  | Last name                                                                       |
+| `--email <email>`    | Email address                                                                   |
+| `--phone <phone>`    | Phone number                                                                    |
+| `--country <code>`   | Country code or full name (e.g. `US`)                                           |
+| `--state <state>`    | State/province (required for US/CA)                                             |
+| `--city <city>`      | City                                                                            |
+| `--street <addr>`    | Street address                                                                  |
+| `--zipcode <zip>`    | Postal code                                                                     |
+| `--company <name>`   | Company (optional)                                                              |
+| `--validate-only`    | Validate config and exit                                                        |
+| `-t, --test`         | Test mode: no actual download                                                   |
+| `--init-config`      | Write a starter config file (with `$schema`) and open it in `$EDITOR`           |
+| `--config <path>`    | Load config from an explicit path (overrides auto-discovery)                    |
 
 ### Registration details
 
@@ -82,14 +107,16 @@ Prompts are skipped when there's nothing to interactively type into:
 
 - **non-interactive contexts** (CI, piped input, the chained AUR build) — falls
   back to the obviously-fake placeholder data (and warns you it did)
-- **`--aur`** (the unattended build path), **`--init-config`**, **`--validate-only`**
+- **`--aur`** (the unattended build path), **`--init-config`**,
+  **`--validate-only`**
 
 The address fields stay at their placeholder/config/flag value; only the
 identity fields are prompted.
 
 ### Environment variables
 
-All registration fields can be set via `DAVINCI_*` env vars. CLI args take precedence.
+All registration fields can be set via `DAVINCI_*` env vars. CLI args take
+precedence.
 
 ```bash
 export DAVINCI_EMAIL="you@example.com"
@@ -99,27 +126,40 @@ export DAVINCI_REGION="gb"                   # force BMD support region (2-lette
 export DAVINCI_OUTPUT_DIR="/custom/path"      # override download directory
 export DAVINCI_TIMEOUT_MS="900000"            # download timeout (15 min default)
 export DAVINCI_RETRY_ATTEMPTS="3"             # download retry attempts
+export DAVINCI_PLATFORM="linux"               # override platform autodetect
 ```
 
-Priority: CLI args -> env vars -> config file -> built-in defaults.
+`DAVINCI_PLATFORM` (`linux` | `mac` | `windows` | `winarm`) bypasses
+autodetection. It's the escape hatch on **ARM Linux**, where there is no BMD
+build: autodetect fails fast, and `DAVINCI_PLATFORM=linux` forces the x86_64
+download. The `--platform` flag, when given, takes precedence over it.
+
+Priority: CLI args -> env vars -> config file -> interactive prompt -> built-in
+defaults. (The prompt only fills the identity fields on a bare interactive run;
+see [Registration details](#registration-details).)
 
 ### Config file
 
-Any flag can also be set in a JSON config file. It is discovered (XDG-aware), in
-order, at:
+Any flag can also be set in a JSON config file. It is discovered, in order, at:
 
 - `./.davinci-resolve-downloader.json` (current directory)
-- `$XDG_CONFIG_HOME/davinci-resolve-downloader/config.json` (defaults to
-  `~/.config/davinci-resolve-downloader/config.json`)
+- `./davinci-resolve-downloader.config.json` (current directory)
+- the per-user config directory (platform-specific):
+  - **Linux/macOS**: `$XDG_CONFIG_HOME/davinci-resolve-downloader/config.json`
+    (defaults to `~/.config/davinci-resolve-downloader/config.json`)
+  - **Windows**: `%APPDATA%\davinci-resolve-downloader\config.json` (defaults to
+    `%USERPROFILE%\AppData\Roaming\…`)
 - any path passed with `--config <path>`
 
+> macOS uses `~/.config`, **not** `~/Library/Application Support`.
+
 The fastest way to create one is `dr-downloader --init-config`: it writes a
-fully-populated starter file to the XDG path above (without clobbering an
-existing one) and opens it in your editor. The file is pre-wired with a
-[`$schema`](schema/config.schema.json) reference, so editors that understand
-JSON Schema give you autocompletion (a dropdown of valid `country` and `region`
-codes) and validate fields the same way BMD's registration form does
-(email/phone format, etc.).
+fully-populated starter file to the per-user config path above (without
+clobbering an existing one) and opens it in your editor. The file is pre-wired
+with a [`$schema`](schema/config.schema.json) reference, so editors that
+understand JSON Schema give you autocompletion (a dropdown of valid `country`
+and `region` codes) and validate fields the same way BMD's registration form
+does (email/phone format, etc.).
 
 Keys match the flag names:
 
@@ -218,18 +258,25 @@ paru -Bi ~/.cache/paru/clone/davinci-resolve
 
 ## Bot identity
 
-This tool does **not** disguise itself as a regular browser. Every request it
-makes (the page navigation and the file download) is sent with an honest,
-identifiable User-Agent:
+This tool identifies itself honestly. Every request it makes (the page
+navigation and the file download) is sent with an identifiable User-Agent:
 
 ```text
 davinci-resolve-downloader/<version> (+https://github.com/kjanat/dr-downloader)
 ```
 
 That is intentional. Blackmagic Design can grep their logs for
-`davinci-resolve-downloader` and block it server-side if they'd prefer this
-tool didn't reach them. The respectful behavior is the default, and there is no
-flag in this README to turn it off.
+`davinci-resolve-downloader` and block it server-side if they'd prefer this tool
+didn't reach them. The respectful behavior is the default, and there is no flag
+in this README to turn it off.
+
+In full honesty, the browser layer is **not** equally transparent: to keep BMD's
+AngularJS form working under headless Chrome, the page disables
+`AutomationControlled` and reports `navigator.webdriver = false` — standard
+anti-bot-detection measures (the "anti-detection measures" in step 1 of
+[How it works](#how-it-works)). So the _fingerprint_ is that of a regular
+browser; the _User-Agent_ is not. The identifiable thing — the part BMD would
+actually filter on — stays honest by design.
 
 ## Notes
 
@@ -245,3 +292,7 @@ flag in this README to turn it off.
 
 [DaVinci Resolve]: https://www.blackmagicdesign.com/products/davinciresolve
 [Bun]: https://bun.sh/
+[@kjanat/dreamcli]: https://npm.im/@kjanat/dreamcli
+
+<!-- markdownlint-disable-file MD033 -->
+<!-- rumdl-disable-file MD013 -->

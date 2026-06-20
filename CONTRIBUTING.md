@@ -3,8 +3,9 @@
 ## Development
 
 ```bash
-bun run dev          # watch mode
-bun run fake         # test mode with mock data
+bun start            # run the CLI (= bun run src/main.ts)
+bun run fake         # test mode, skips the real download (--test)
+bun test             # run the test suite
 bun run lint         # biome lint
 bun run lint:fix     # biome lint --write
 bun run format       # dprint fmt
@@ -21,19 +22,27 @@ download on `workflow_dispatch` and upload the artifact.
 
 ```tree
 src/
-  main.ts                        # entry point
+  main.ts                        # entry point (wires up and runs the CLI)
+  cli.ts                         # dreamcli command: flags, prompts, config resolution
   config/
     types.ts                     # RegistrationData, DownloadConfig, Platform
-    ConfigManager.ts             # env + CLI arg loading, validation, defaults
+    defaults.ts                  # placeholder registration + default timeout/retries/output
+    configFile.ts                # config-file discovery path + --init-config writer
+    platform.ts                  # autodetect target platform from host arch/OS
+    region.ts                    # normalize BMD support region codes
+    aur.ts                       # resolve the paru/yay clone dir for --aur
   constants/
     selectors.ts                 # CSS selectors for BMD form fields
   downloader/
-    DaVinciDownloader.ts         # orchestrates browse -> form -> download
+    DaVinciDownloader.ts         # orchestrates browse -> form -> download (+ region rotation)
     FormHandler.ts               # fills and submits the registration form
+    DownloadMonitor.ts           # watches the output dir for the completed file
     StreamDownloader.ts          # streams file from CDN URL to disk
   utils/
     browser.ts                   # Puppeteer launch + anti-detection config
-    filesystem.ts                # file utilities
+    userAgent.ts                 # honest default User-Agent (DAVINCI_USER_AGENT override)
+    editor.ts                    # resolve + launch $EDITOR for --init-config
+    filesystem.ts                # file utilities (newest file, stability, size)
     formatters.ts                # formatFileSize()
   validation/
     ValidationService.ts         # mirrors BMD's Angular validators

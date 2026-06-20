@@ -30,14 +30,22 @@ describe('buildDefaultConfig', () => {
 });
 
 describe('defaultConfigPath', () => {
-	it('honors $XDG_CONFIG_HOME', () => {
-		const path = defaultConfigPath({ XDG_CONFIG_HOME: '/xdg' }, '/home/me');
+	it('uses the configDir dreamcli resolves (Unix)', () => {
+		const path = defaultConfigPath({ cwd: '/repo', configDir: '/home/me/.config' });
+		expect(path).toBe('/home/me/.config/davinci-resolve-downloader/config.json');
+	});
+
+	it('honors a custom XDG configDir', () => {
+		const path = defaultConfigPath({ cwd: '/repo', configDir: '/xdg' });
 		expect(path).toBe('/xdg/davinci-resolve-downloader/config.json');
 	});
 
-	it('falls back to ~/.config when XDG is unset', () => {
-		const path = defaultConfigPath({}, '/home/me');
-		expect(path).toBe('/home/me/.config/davinci-resolve-downloader/config.json');
+	it('writes under %APPDATA% on Windows (matches dreamcli discovery)', () => {
+		const path = defaultConfigPath({
+			cwd: 'C:\\repo',
+			configDir: 'C:\\Users\\me\\AppData\\Roaming',
+		});
+		expect(path).toBe('C:\\Users\\me\\AppData\\Roaming\\davinci-resolve-downloader\\config.json');
 	});
 });
 

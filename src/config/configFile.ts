@@ -1,9 +1,9 @@
 import { DEFAULT_REGISTRATION, DEFAULT_RETRY_ATTEMPTS, DEFAULT_TIMEOUT_MS } from '#config/defaults';
 import pkg from '#pkg' with { type: 'json' };
+import { buildConfigSearchPaths } from '@kjanat/dreamcli';
+import { createAdapter, type RuntimeAdapter } from '@kjanat/dreamcli/runtime';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
-import { env as processEnv } from 'node:process';
+import { dirname } from 'node:path';
 
 /**
  * URL of the config JSON Schema, hosted in the repo. Wired into generated
@@ -13,15 +13,28 @@ import { env as processEnv } from 'node:process';
 export const CONFIG_SCHEMA_URL = `https://raw.githubusercontent.com/${pkg.repository}/master/schema/config.schema.json`;
 
 /**
- * The XDG config path dreamcli discovers for this app:
- * `$XDG_CONFIG_HOME/davinci-resolve-downloader/config.json`
- * (defaulting to `~/.config/...`).
+ * The global config path dreamcli discovers for this app — the last of its
+ * search paths, `{configDir}/{appName}/config.json`, where `configDir` is
+ * `$XDG_CONFIG_HOME`/`~/.config` on Unix and `%APPDATA%`/`~\AppData\Roaming` on
+ * Windows.
  *
- * Generating the file here means it is picked up with no `--config` flag.
+ * Routed through dreamcli's own resolver (the runtime adapter's `configDir`
+ * plus {@link buildConfigSearchPaths}) rather than a hand-rolled XDG branch, so
+ * `--init-config` writes the file exactly where discovery later probes for it —
+ * on every platform, not just Unix. Generating it here means it is picked up
+ * with no `--config` flag.
+ *
+ * @param adapter - injected for testability; defaults to the detected runtime.
  */
-export function defaultConfigPath(env: NodeJS.ProcessEnv = processEnv, home: string = homedir()): string {
-	const base = env.XDG_CONFIG_HOME?.trim() || join(home, '.config');
-	return join(base, pkg.name, 'config.json');
+export function defaultConfigPath(
+	adapter: Pick<RuntimeAdapter, 'cwd' | 'configDir'> = createAdapter(),
+): string {
+	const searchPaths = buildConfigSearchPaths(pkg.name, adapter.cwd, adapter.configDir);
+	const globalPath = searchPaths.at(-1);
+	if (globalPath === undefined) {
+		throw new Error(`dreamcli returned no config search paths for ${pkg.name}`);
+	}
+	return globalPath;
 }
 
 /**
