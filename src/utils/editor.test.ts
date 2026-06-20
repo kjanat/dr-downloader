@@ -12,6 +12,14 @@ describe('resolveEditorCommand', () => {
 		expect(cmd).toEqual({ cmd: 'code', args: ['--wait'], wait: true });
 	});
 
+	it('keeps a quoted path with spaces intact, flags as args', () => {
+		const cmd = resolveEditorCommand({
+			env: { EDITOR: '"C:\\Program Files\\VS Code\\Code.exe" --wait' },
+			platform: 'win32',
+		});
+		expect(cmd).toEqual({ cmd: 'C:\\Program Files\\VS Code\\Code.exe', args: ['--wait'], wait: true });
+	});
+
 	it('falls back to xdg-open (detached) on linux with no editor set', () => {
 		expect(resolveEditorCommand({ env: {}, platform: 'linux' })).toEqual({
 			cmd: 'xdg-open',

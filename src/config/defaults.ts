@@ -31,7 +31,9 @@ export const DEFAULT_REGISTRATION = {
  * email means a junk lead regardless of whatever else the user customized.
  */
 export function isPlaceholderRegistration(data: { readonly email: string }): boolean {
-	return data.email === DEFAULT_REGISTRATION.email;
+	// Normalize (trim + lowercase) so trivial variants of the placeholder email
+	// still count as "not real" rather than slipping past the nudge.
+	return data.email.trim().toLowerCase() === DEFAULT_REGISTRATION.email.trim().toLowerCase();
 }
 
 /** Default download timeout (15 minutes). */

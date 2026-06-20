@@ -62,6 +62,9 @@ describe('dr-downloader command', () => {
 	it('omits the nudge from stdout in --json mode (machine consumers parse the email)', async () => {
 		const r = await runCommand(downloadCommand, ['--validate-only'], { jsonMode: true });
 		expect(r.stdout.join('')).not.toContain('placeholder registration data');
+		// The nudge is a stderr warn that's suppressed in jsonMode — confirm it's
+		// gone from both channels, not merely redirected off stdout.
+		expect(r.stderr.join('')).not.toContain('placeholder registration data');
 	});
 
 	it('does not consume prompt answers in a suppressed mode (--validate-only)', async () => {

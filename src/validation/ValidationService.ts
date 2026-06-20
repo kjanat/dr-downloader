@@ -228,9 +228,11 @@ function validateContextDependentFields(
 	data: RegistrationValidationData,
 	errors: ValidationErrors,
 ): void {
-	// State validation (context-dependent on country)
-	if (data.country && data.state !== undefined) {
-		const stateResult = validateState(data.state, data.country);
+	// State validation (context-dependent on country). Run whenever a country is
+	// present — even with no state — so `validateState` can flag a missing state
+	// for countries that require one (e.g. US/CA) instead of silently skipping.
+	if (data.country) {
+		const stateResult = validateState(data.state ?? '', data.country);
 		if (!stateResult.isValid && stateResult.error) {
 			errors.state = stateResult.error;
 		}
@@ -255,7 +257,9 @@ function isEmpty(value: unknown): boolean {
  * Based on common BMD form behavior
  */
 function countryRequiresState(country: string): boolean {
-	const cleaned = country.replace(/^string:/i, '').toLowerCase();
+	const cleaned = country.replace(/^string:/i, '').trim().toLowerCase();
 	const stateCountries = ['us', 'usa', 'united states', 'ca', 'canada'];
-	return stateCountries.some((c) => cleaned.includes(c));
+	// Exact match: substring matching mis-flags countries that merely contain a
+	// code as a substring (e.g. "russia"/"australia" contain "us").
+	return stateCountries.includes(cleaned);
 }

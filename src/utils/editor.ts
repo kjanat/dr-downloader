@@ -15,15 +15,34 @@ export interface EditorCommand {
 }
 
 /**
+ * Splits a configured editor command into tokens, respecting double/single
+ * quotes so an executable path containing spaces survives intact — e.g.
+ * `"C:\Program Files\Code.exe" --wait` -> [`C:\Program Files\Code.exe`, `--wait`].
+ * Unquoted tokens split on whitespace. Shell escape sequences are not
+ * interpreted (uncommon in `$EDITOR`/`$VISUAL`).
+ */
+function tokenizeCommand(input: string): string[] {
+	const tokens: string[] = [];
+	const matcher = /"([^"]*)"|'([^']*)'|(\S+)/g;
+	let match: RegExpExecArray | null = matcher.exec(input);
+	while (match !== null) {
+		tokens.push(match[1] ?? match[2] ?? match[3] ?? '');
+		match = matcher.exec(input);
+	}
+	return tokens;
+}
+
+/**
  * Resolves how to open a file. Prefers the user's configured editor
  * (`$VISUAL`, then `$EDITOR`) — splitting off any flags it carries, e.g.
- * `code --wait` — and treats it as a terminal editor we wait on. With neither
- * set, falls back to the OS "open with default app" command, which detaches.
+ * `code --wait`, while keeping a quoted path with spaces intact — and treats it
+ * as a terminal editor we wait on. With neither set, falls back to the OS "open
+ * with default app" command, which detaches.
  */
 export function resolveEditorCommand(rt: EditorRuntime): EditorCommand {
 	const configured = (rt.env.VISUAL ?? rt.env.EDITOR)?.trim();
 	if (configured) {
-		const [cmd, ...args] = configured.split(/\s+/);
+		const [cmd, ...args] = tokenizeCommand(configured);
 		if (cmd) return { cmd, args, wait: true };
 	}
 

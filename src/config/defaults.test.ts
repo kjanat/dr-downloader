@@ -17,4 +17,8 @@ describe('isPlaceholderRegistration', () => {
 	it('is false once a real email is supplied', () => {
 		expect(isPlaceholderRegistration({ email: 'you@example.com' })).toBe(false);
 	});
+
+	it('still detects the placeholder through casing/whitespace variants', () => {
+		expect(isPlaceholderRegistration({ email: '  PLACEHOLDER@Example.com ' })).toBe(true);
+	});
 });

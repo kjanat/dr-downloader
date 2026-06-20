@@ -289,9 +289,9 @@
 		},
 		"phone": {
 			"$comment": "BMD bmdPhoneValidator regex; keep in sync with PHONE_PATTERN in ValidationService.ts.",
-			"description": "Phone number. Digits, spaces, parentheses, plus and minus only.",
+			"description": "Phone number. Empty, or digits, spaces, parentheses, plus and minus only.",
 			"type": "string",
-			"pattern": "^[\\s\\d()+-]+$"
+			"pattern": "^$|^[\\s\\d()+-]+$"
 		},
 		"platform": {
 			"description": "Target platform. Defaults to autodetect.",

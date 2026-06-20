@@ -1,6 +1,5 @@
 import { DEFAULT_REGISTRATION, DEFAULT_RETRY_ATTEMPTS, DEFAULT_TIMEOUT_MS } from '#config/defaults';
 import pkg from '#pkg' with { type: 'json' };
-import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -48,12 +47,19 @@ export interface WriteConfigResult {
 
 /**
  * Writes {@link buildDefaultConfig} to `path`, creating parent dirs. Never
- * clobbers: if the file already exists it is left untouched and `created` is
- * `false` (so the caller can just open the existing one).
+ * clobbers: the exclusive `wx` flag makes creation atomic, so a file that
+ * already exists (even one created by a concurrent process between calls) is
+ * left untouched and `created` is `false` (the caller can open the existing one).
  */
 export async function writeDefaultConfig(path: string): Promise<WriteConfigResult> {
-	if (existsSync(path)) return { path, created: false };
 	await mkdir(dirname(path), { recursive: true });
-	await writeFile(path, `${JSON.stringify(buildDefaultConfig(), null, '\t')}\n`, 'utf8');
-	return { path, created: true };
+	try {
+		await writeFile(path, `${JSON.stringify(buildDefaultConfig(), null, '\t')}\n`, { encoding: 'utf8', flag: 'wx' });
+		return { path, created: true };
+	} catch (error) {
+		if (error instanceof Error && 'code' in error && error.code === 'EEXIST') {
+			return { path, created: false };
+		}
+		throw error;
+	}
 }

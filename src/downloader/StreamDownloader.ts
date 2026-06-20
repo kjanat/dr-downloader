@@ -34,6 +34,16 @@ export async function download(url: string, outputDir: string, out: Out): Promis
 	const writer = createWriteStream(outputPath);
 	const reader = body.getReader();
 
+	// Attach the error listener the instant the writer exists — before any write
+	// — so a stream failure (e.g. disk full) is handled here instead of crashing
+	// the process as an unhandled 'error' event. Reused across every drain/finish
+	// await below; the no-op `catch` keeps the rejection observed so it never
+	// warns when no await is actively racing it.
+	const writerFailed = new Promise<never>((_resolve, reject) => {
+		writer.once('error', (cause: Error) => reject(cause));
+	});
+	void writerFailed.catch(() => {});
+
 	// Determinate bar when the server sends a content-length, otherwise an
 	// indeterminate one. Animates in a TTY; silent in non-TTY / --json.
 	const bar = out.progress({
@@ -44,7 +54,7 @@ export async function download(url: string, outputDir: string, out: Out): Promis
 	let downloaded = 0;
 	try {
 		while (true) {
-			const { done, value } = await reader.read();
+			const { done, value } = await Promise.race([reader.read(), writerFailed]);
 			if (done) break;
 
 			const flushed = writer.write(Buffer.from(value));
@@ -52,24 +62,29 @@ export async function download(url: string, outputDir: string, out: Out): Promis
 			bar.increment(value.byteLength);
 
 			// Honor stream backpressure: when the buffer is full, wait for the
-			// drain event before reading more so chunks don't pile up in memory
-			// if the disk is slower than the network.
+			// drain event before reading more so chunks don't pile up in memory if
+			// the disk is slower than the network. Race against writerFailed so a
+			// write error aborts the wait instead of hanging (an errored stream
+			// never drains).
 			if (!flushed) {
-				await new Promise<void>((resolve) => writer.once('drain', resolve));
+				await Promise.race([
+					new Promise<void>((resolve) => writer.once('drain', resolve)),
+					writerFailed,
+				]);
 			}
 		}
 
 		writer.end();
-		await new Promise<void>((resolve, reject) => {
-			writer.on('finish', resolve);
-			writer.on('error', reject);
-		});
+		await Promise.race([
+			new Promise<void>((resolve) => writer.once('finish', resolve)),
+			writerFailed,
+		]);
 
 		bar.done(`Download complete: ${filename} (${formatFileSize(downloaded)})`);
 		return outputPath;
 	} catch (e) {
 		bar.fail('Download failed');
-		writer.end();
+		writer.destroy();
 		throw e;
 	}
 }
