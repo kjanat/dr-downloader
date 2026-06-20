@@ -84,6 +84,28 @@ export DAVINCI_RETRY_ATTEMPTS="3"             # download retry attempts
 
 Priority: CLI args -> env vars -> config file -> built-in defaults.
 
+### Config file
+
+Any flag can also be set in a JSON config file. It is discovered (XDG-aware), in
+order, at:
+
+- `./.davinci-resolve-downloader.json` (current directory)
+- `$XDG_CONFIG_HOME/davinci-resolve-downloader/config.json` (defaults to
+  `~/.config/davinci-resolve-downloader/config.json`)
+- any path passed with `--config <path>`
+
+Keys match the flag names:
+
+```json
+{
+	"country": "US",
+	"state": "California",
+	"region": "gb",
+	"output": "/home/me/Downloads",
+	"retryAttempts": 5
+}
+```
+
 ## How it works
 
 1. Launches headless Chrome via Puppeteer (with anti-detection measures)
