@@ -49,24 +49,25 @@ dr-downloader --help                       # show all options
 
 ### CLI flags
 
-| Flag                 | Description                                            |
-| -------------------- | ------------------------------------------------------ |
-| `-o, --output <dir>` | Download directory (default: `~/Downloads`)            |
-| `--aur`              | AUR preset: output to `~/.cache/yay/davinci-resolve/`  |
-| `--platform <p>`     | `linux`, `mac`, `windows` (default: autodetect)        |
-| `--region <code>`    | BMD support region, 2-letter (e.g. `gb`); default: geo |
-| `--firstname <name>` | First name                                             |
-| `--lastname <name>`  | Last name                                              |
-| `--email <email>`    | Email address                                          |
-| `--phone <phone>`    | Phone number                                           |
-| `--country <code>`   | Country code or full name (e.g. `US`)                  |
-| `--state <state>`    | State/province (required for US/CA)                    |
-| `--city <city>`      | City                                                   |
-| `--street <addr>`    | Street address                                         |
-| `--zipcode <zip>`    | Postal code                                            |
-| `--company <name>`   | Company (optional)                                     |
-| `--validate-only`    | Validate config and exit                               |
-| `-t, --test`         | Test mode: no actual download                          |
+| Flag                 | Description                                                           |
+| -------------------- | --------------------------------------------------------------------- |
+| `-o, --output <dir>` | Download directory (default: `~/Downloads`)                           |
+| `--aur`              | AUR preset: output to `~/.cache/yay/davinci-resolve/`                 |
+| `--platform <p>`     | `linux`, `mac`, `windows` (default: autodetect)                       |
+| `--region <code>`    | BMD support region, 2-letter (e.g. `gb`); default: geo                |
+| `--firstname <name>` | First name                                                            |
+| `--lastname <name>`  | Last name                                                             |
+| `--email <email>`    | Email address                                                         |
+| `--phone <phone>`    | Phone number                                                          |
+| `--country <code>`   | Country code or full name (e.g. `US`)                                 |
+| `--state <state>`    | State/province (required for US/CA)                                   |
+| `--city <city>`      | City                                                                  |
+| `--street <addr>`    | Street address                                                        |
+| `--zipcode <zip>`    | Postal code                                                           |
+| `--company <name>`   | Company (optional)                                                    |
+| `--validate-only`    | Validate config and exit                                              |
+| `-t, --test`         | Test mode: no actual download                                         |
+| `--init-config`      | Write a starter config file (with `$schema`) and open it in `$EDITOR` |
 
 ### Environment variables
 
@@ -94,17 +95,30 @@ order, at:
   `~/.config/davinci-resolve-downloader/config.json`)
 - any path passed with `--config <path>`
 
+The fastest way to create one is `dr-downloader --init-config`: it writes a
+fully-populated starter file to the XDG path above (without clobbering an
+existing one) and opens it in your editor. The file is pre-wired with a
+[`$schema`](schema/config.schema.json) reference, so editors that understand
+JSON Schema give you autocompletion and validate fields the same way BMD's
+registration form does (email/phone format, 2-letter region, etc.).
+
 Keys match the flag names:
 
 ```json
 {
-	"country": "US",
-	"state": "California",
-	"region": "gb",
-	"output": "/home/me/Downloads",
-	"retryAttempts": 5
+  "$schema": "https://raw.githubusercontent.com/kjanat/dr-downloader/master/schema/config.schema.json",
+  "country": "US",
+  "state": "California",
+  "region": "gb",
+  "output": "/home/me/Downloads",
+  "retryAttempts": 5
 }
 ```
+
+Every key is optional — a config is a partial override layer, so a file with
+just `{"region":"gb"}` is valid. Whether the _fully resolved_ registration has
+everything BMD requires (and the US/CA "state required" rule) is checked at run
+time, not against the file alone.
 
 ## How it works
 
@@ -183,11 +197,30 @@ paru -Bi ~/.cache/paru/clone/davinci-resolve
 > or the filename/sha256 won't line up. Run `paru -G davinci-resolve` first so
 > the PKGBUILD is current.
 
+## Bot identity
+
+This tool does **not** disguise itself as a regular browser. Every request it
+makes (the page navigation and the file download) is sent with an honest,
+identifiable User-Agent:
+
+```text
+davinci-resolve-downloader/<version> (+https://github.com/kjanat/dr-downloader)
+```
+
+That is intentional. Blackmagic Design can grep their logs for
+`davinci-resolve-downloader` and block it server-side if they'd prefer this
+tool didn't reach them. The respectful behavior is the default, and there is no
+flag in this README to turn it off.
+
 ## Notes
 
 - DaVinci Resolve is proprietary software by Blackmagic Design
 - This tool only downloads the publicly available free installer
-- Registration data defaults to placeholder values; override with your own
+- Registration data defaults to **obviously fake** placeholder values
+  (`Placeholder User <placeholder@example.com>`) so a bare run is never mistaken
+  for a real lead in BMD's funnel. Supply your own via flags, `DAVINCI_*` env
+  vars, or a config file to register as yourself; a bare run warns you it is
+  using placeholder data
 
 <!--link-definitions-->
 

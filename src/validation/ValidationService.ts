@@ -14,6 +14,10 @@ export interface ValidationErrors {
 
 // biome-ignore lint/complexity/noStaticOnlyClass: not now
 export class ValidationService {
+	// NOTE: EMAIL_PATTERN and PHONE_PATTERN below are mirrored in
+	// `schema/config.schema.json` (email/phone `pattern`s) so editors validate
+	// config files the same way. Keep the two in sync when either changes.
+
 	/** Exact email regex pattern from BMD's `bmdEmailValidator` directive */
 	private static readonly EMAIL_PATTERN =
 		/^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([A-Za-z0-9-]+\.)+[A-Za-z0-9-]{2,}))$/;

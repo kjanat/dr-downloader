@@ -2,21 +2,37 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 /**
- * Default registration field values (placeholders; override with your own via
- * flags, env vars, or a config file). Platform is excluded — it is autodetected.
+ * Default registration field values. These are deliberately, *obviously*
+ * placeholder — `Placeholder User <placeholder@example.com>` — so that a bare
+ * run never masquerades as a real registration in Blackmagic Design's lead
+ * funnel. The name and email read as fake at a glance, and `example.com` (RFC
+ * 2606 reserved) can never be a real mailbox, yet all fields still satisfy
+ * BMD's form validation so the download works out of the box.
+ *
+ * Override with your own via flags, env vars, or a config file — same as you'd
+ * type into the form by hand. Platform is excluded — it is autodetected.
  */
 export const DEFAULT_REGISTRATION = {
-	firstname: 'John',
-	lastname: 'Doe',
-	email: 'john.doe@example.com',
-	phone: '555-123-4567',
+	firstname: 'Placeholder',
+	lastname: 'User',
+	email: 'placeholder@example.com',
+	phone: '555-555-0199',
 	country: 'US',
 	state: 'New York',
 	city: 'New York',
-	street: '123 Main St',
+	street: '123 Placeholder St',
 	zipcode: '10001',
 	company: '',
 };
+
+/**
+ * Whether the registration is still the built-in placeholder. Keyed on the
+ * email, since that is the field BMD's CRM uses to identify a lead: a default
+ * email means a junk lead regardless of whatever else the user customized.
+ */
+export function isPlaceholderRegistration(data: { readonly email: string }): boolean {
+	return data.email === DEFAULT_REGISTRATION.email;
+}
 
 /** Default download timeout (15 minutes). */
 export const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;

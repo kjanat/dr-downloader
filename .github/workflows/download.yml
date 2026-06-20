@@ -6,16 +6,16 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
-        with: { node-version: latest }
+        with: { node-version-file: .node-version }
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: latest }
       - uses: kjanat/runner@master
-      - run: runner install --frozen start
+      - run: runner install --frozen dr-downloader
       - name: Upload artifact
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: davinci-resolve
           path: downloads/

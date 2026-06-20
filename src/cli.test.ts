@@ -40,6 +40,21 @@ describe('dr-downloader command', () => {
 		const r = await runCommand(downloadCommand, ['--validate-only', '--platform', 'banana']);
 		expect(r.exitCode).not.toBe(0);
 	});
+
+	it('nudges (on stderr) when run with the default placeholder data', async () => {
+		const r = await runCommand(downloadCommand, ['--validate-only']);
+		expect(r.stderr.join('')).toContain('placeholder registration data');
+	});
+
+	it('suppresses the nudge once a real email is supplied', async () => {
+		const r = await runCommand(downloadCommand, ['--validate-only', '--email', 'you@example.com']);
+		expect(r.stderr.join('')).not.toContain('placeholder registration data');
+	});
+
+	it('omits the nudge from stdout in --json mode (machine consumers parse the email)', async () => {
+		const r = await runCommand(downloadCommand, ['--validate-only'], { jsonMode: true });
+		expect(r.stdout.join('')).not.toContain('placeholder registration data');
+	});
 });
 
 describe('resolveConfig', () => {
@@ -62,6 +77,7 @@ describe('resolveConfig', () => {
 		test: false,
 		aur: false,
 		'validate-only': false,
+		'init-config': false,
 	};
 
 	it('maps test mode and timeout into the download config', () => {

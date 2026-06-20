@@ -1,11 +1,19 @@
 import { resolveAurOutputDir } from '#config/aur';
-import { DEFAULT_REGISTRATION, DEFAULT_RETRY_ATTEMPTS, DEFAULT_TIMEOUT_MS, defaultOutputDir } from '#config/defaults';
+import { defaultConfigPath, writeDefaultConfig } from '#config/configFile';
+import {
+	DEFAULT_REGISTRATION,
+	DEFAULT_RETRY_ATTEMPTS,
+	DEFAULT_TIMEOUT_MS,
+	defaultOutputDir,
+	isPlaceholderRegistration,
+} from '#config/defaults';
 import { autodetectPlatform } from '#config/platform';
 import { normalizeRegion } from '#config/region';
 import type { DownloadConfig, Platform, RegistrationData } from '#config/types';
 import { PLATFORMS } from '#config/types';
 import { DaVinciDownloader } from '#downloader/DaVinciDownloader';
 import pkg from '#pkg' with { type: 'json' };
+import { openInEditor } from '#utils/editor';
 import { type ValidationErrors, ValidationService } from '#validation/ValidationService';
 import { cli, CLIError, command, flag } from '@kjanat/dreamcli';
 import { warn } from 'node:console';
@@ -31,6 +39,7 @@ export interface DownloadFlags {
 	readonly test: boolean;
 	readonly aur: boolean;
 	readonly 'validate-only': boolean;
+	readonly 'init-config': boolean;
 }
 
 /** Domain config assembled from resolved flags, handed to the downloader. */
@@ -209,13 +218,41 @@ export const downloadCommand = command('dr-downloader')
 	.flag('test', flag.boolean().alias('t').default(false).describe('Test mode: fill form, skip download'))
 	.flag('aur', flag.boolean().default(false).describe('AUR preset: output to the paru/yay clone dir, platform linux'))
 	.flag('validate-only', flag.boolean().default(false).describe('Validate configuration and exit'))
+	.flag(
+		'init-config',
+		flag.boolean().default(false).describe('Write a starter config file (with $schema) and open it in your editor'),
+	)
 	.derive(({ flags, out }) => resolveConfig(flags, (message) => out.warn(message)))
 	.action(async ({ flags, ctx, out }) => {
+		// `--init-config` is a standalone action: write the starter config and
+		// open it, ignoring the rest of the resolution. Runs before validation so
+		// it works regardless of what the (placeholder) defaults look like.
+		if (flags['init-config']) {
+			const { path, created } = await writeDefaultConfig(defaultConfigPath());
+			out.log(created ? `📝 Wrote starter config to ${path}` : `📝 Config already exists at ${path}`);
+			out.log('   Edit your details there; CLI flags and DAVINCI_* env vars still override it.');
+			await openInEditor(path);
+			return;
+		}
+
 		const { registrationData, downloadConfig } = ctx;
 
 		const validation = ValidationService.validateRegistrationData(registrationData);
 		if (!validation.isValid) {
 			throw configError(validation.errors);
+		}
+
+		// Nudge: a bare run submits obviously-fake placeholder data to BMD. Warn
+		// (to stderr) so the user knows to supply their own, the same details
+		// they'd type into the form by hand. Skipped in --json mode, where a
+		// machine consumer can see the placeholder email in the payload itself.
+		if (!out.jsonMode && isPlaceholderRegistration(registrationData)) {
+			out.warn(
+				`Using placeholder registration data (${registrationData.firstname} `
+					+ `${registrationData.lastname} <${registrationData.email}>) — this is what gets `
+					+ 'submitted to Blackmagic Design. Provide your own with --firstname/--lastname/'
+					+ '--email, DAVINCI_* env vars, or a config file.',
+			);
 		}
 
 		if (flags['validate-only']) {

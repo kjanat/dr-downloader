@@ -1,4 +1,5 @@
 import type { DownloadConfig } from '#config/types';
+import { resolveUserAgent } from '#utils/userAgent';
 import { mkdir } from 'node:fs/promises';
 import type { Browser, Page } from 'puppeteer';
 import puppeteer from 'puppeteer';
@@ -25,17 +26,14 @@ export async function createBrowser(config: DownloadConfig): Promise<Browser> {
 	return browser;
 }
 
-// Realistic User-Agent to avoid headless detection by sites like BMD
-const USER_AGENT =
-	'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
-
 export async function createPage(
 	browser: Browser,
 	config: DownloadConfig,
 ): Promise<Page> {
 	const page = await browser.newPage();
 
-	await page.setUserAgent({ userAgent: USER_AGENT });
+	// Honest, identifiable UA by default; `DAVINCI_USER_AGENT` overrides it.
+	await page.setUserAgent({ userAgent: resolveUserAgent() });
 	await page.setViewport({ width: 1920, height: 1080 });
 
 	const navTimeout = Math.min(config.timeout || 45_000, 60_000);

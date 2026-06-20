@@ -1,5 +1,6 @@
 import type { DownloaderOutput } from '#downloader/output';
 import { formatFileSize } from '#utils/formatters';
+import { resolveUserAgent } from '#utils/userAgent';
 import { createWriteStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
@@ -15,10 +16,10 @@ export class StreamDownloader {
 		const outputPath = join(outputDir, filename);
 
 		const response = await fetch(url, {
-			headers: {
-				'User-Agent':
-					'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-			},
+			// Same identity as the Puppeteer page (honest by default; overridable
+			// via DAVINCI_USER_AGENT) so the page request and the byte download
+			// don't speak with two different voices.
+			headers: { 'User-Agent': resolveUserAgent() },
 		});
 
 		if (!response.ok) {
