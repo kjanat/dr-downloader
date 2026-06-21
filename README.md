@@ -1,5 +1,7 @@
 # DaVinci Resolve Downloader
 
+[![NPM](https://img.shields.io/npm/v/davinci-resolve-downloader?logo=npm&labelColor=CB3837&color=black)][npm]
+
 Automated downloader for [DaVinci Resolve] (free edition).\
 Uses Puppeteer to navigate BMD's AngularJS registration form, capture the CDN
 download URL, and stream the file to disk. The CLI is built with
@@ -307,11 +309,17 @@ When it does:
   vars, or a config file to register as yourself; a bare run warns you it is
   using placeholder data
 
+## License
+
+[MIT][LICENSE] © 2026 Kaj Kowalski
+
 <!--link-definitions-->
 
-[DaVinci Resolve]: https://www.blackmagicdesign.com/products/davinciresolve
-[Bun]: https://bun.sh/
 [@kjanat/dreamcli]: https://npm.im/@kjanat/dreamcli
+[Bun]: https://bun.sh/
+[DaVinci Resolve]: https://www.blackmagicdesign.com/products/davinciresolve
+[LICENSE]: https://github.com/kjanat/dr-downloader/blob/master/LICENSE
+[npm]: https://npm.im/davinci-resolve-downloader
 [open an issue]: https://github.com/kjanat/dr-downloader/issues
 
 <!-- markdownlint-disable-file MD033 -->
