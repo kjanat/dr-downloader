@@ -84,9 +84,9 @@ describe('registration prompt gating', () => {
 		expect(shouldSkipRegistrationPrompts({})).toBe(false);
 	});
 
-	it('suppresses prompts for --aur, --init-config, and --validate-only', () => {
+	it('suppresses prompts for --aur, --init, and --validate-only', () => {
 		expect(shouldSkipRegistrationPrompts({ aur: true })).toBe(true);
-		expect(shouldSkipRegistrationPrompts({ 'init-config': true })).toBe(true);
+		expect(shouldSkipRegistrationPrompts({ init: true })).toBe(true);
 		expect(shouldSkipRegistrationPrompts({ 'validate-only': true })).toBe(true);
 	});
 });
@@ -130,7 +130,7 @@ describe('resolveConfig', () => {
 		test: false,
 		aur: false,
 		'validate-only': false,
-		'init-config': false,
+		init: false,
 	};
 
 	it('maps test mode and timeout into the download config', () => {

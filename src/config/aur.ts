@@ -1,3 +1,4 @@
+import { expandTilde } from '#utils/filesystem';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -16,11 +17,11 @@ export interface AurRuntime {
  * auto-detected (paru preferred), defaulting to paru when neither exists.
  */
 export function resolveAurOutputDir(runtime: AurRuntime): string {
+	const home = runtime.home ?? homedir();
 	const override = runtime.env.DAVINCI_AUR_DIR;
-	if (override) return override;
+	if (override) return expandTilde(override, home);
 
 	const exists = runtime.exists ?? existsSync;
-	const home = runtime.home ?? homedir();
 	const paruDir = join(home, '.cache', 'paru', 'clone', 'davinci-resolve');
 	const yayDir = join(home, '.cache', 'yay', 'davinci-resolve');
 

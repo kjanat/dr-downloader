@@ -1,5 +1,13 @@
 import { readdir, stat } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
+
+/** Expands a leading `~`/`~/`/`~\` to the home dir; leaves other paths (incl. `~user`) unchanged. */
+export function expandTilde(path: string, home: string = homedir()): string {
+	if (path === '~') return home;
+	if (path.startsWith('~/') || path.startsWith('~\\')) return join(home, path.slice(2));
+	return path;
+}
 
 export type FileFilter = (filename: string) => boolean;
 

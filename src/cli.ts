@@ -14,6 +14,7 @@ import { PLATFORMS } from '#config/types';
 import { DaVinciDownloader } from '#downloader/DaVinciDownloader';
 import pkg from '#pkg' with { type: 'json' };
 import { openInEditor } from '#utils/editor';
+import { expandTilde } from '#utils/filesystem';
 import {
 	validateEmail,
 	validatePhone,
@@ -46,7 +47,7 @@ export interface DownloadFlags {
 	readonly test: boolean;
 	readonly aur: boolean;
 	readonly 'validate-only': boolean;
-	readonly 'init-config': boolean;
+	readonly init: boolean;
 }
 
 /** Domain config assembled from resolved flags, handed to the downloader. */
@@ -65,7 +66,7 @@ export function resolveConfig(
 	onWarn: (message: string) => void = warn,
 ): ResolvedConfig {
 	let platform: Platform = flags.platform ?? autodetectPlatform({ arch, platform: osPlatform, env });
-	let outputDir = flags.output;
+	let outputDir = expandTilde(flags.output);
 
 	// `--aur` overrides the output dir and forces linux, regardless of other flags.
 	if (flags.aur) {
@@ -129,14 +130,14 @@ function reportValid(data: RegistrationData, out: Out): void {
 
 /**
  * Whether interactive registration prompts should be skipped. The utility modes
- * (`--init-config`, `--validate-only`) don't download, and `--aur` is the
- * unattended build path (often chained in a shell function) — all three resolve
- * to placeholder/CLI values rather than blocking on input. Exported for testing.
+ * (`--init`, `--validate-only`) don't download, and `--aur` is the unattended
+ * build path (often chained in a shell function) — all three resolve to
+ * placeholder/CLI values rather than blocking on input. Exported for testing.
  */
 export function shouldSkipRegistrationPrompts(
-	flags: { readonly aur?: boolean; readonly 'init-config'?: boolean; readonly 'validate-only'?: boolean },
+	flags: { readonly aur?: boolean; readonly init?: boolean; readonly 'validate-only'?: boolean },
 ): boolean {
-	return Boolean(flags.aur || flags['init-config'] || flags['validate-only']);
+	return Boolean(flags.aur || flags.init || flags['validate-only']);
 }
 
 /** Prompt validator for a required free-text field (rejects empty). */
@@ -170,6 +171,16 @@ export function promptPhone(value: string): true | string {
  */
 export const downloadCommand = command('dr-downloader')
 	.description('Download the free edition of DaVinci Resolve from Blackmagic Design')
+	.example('dr-downloader --init', 'Set up a config file first (recommended on first run)')
+	.example('dr-downloader', 'Download the latest build to ~/Downloads')
+	.example('dr-downloader -o ./davinci-resolve', 'Download into a specific directory')
+	.example('dr-downloader --aur', 'Drop the zip into the paru/yay clone dir, then build')
+	.flag(
+		'init',
+		flag.boolean().alias('init-config').default(false).describe(
+			'Write a starter config file (with $schema) and open it in your editor',
+		),
+	)
 	.flag(
 		'firstname',
 		flag.string().env('DAVINCI_FIRSTNAME').config('firstname').default(DEFAULT_REGISTRATION.firstname).describe(
@@ -253,10 +264,6 @@ export const downloadCommand = command('dr-downloader')
 	.flag('test', flag.boolean().alias('t').default(false).describe('Test mode: fill form, skip download'))
 	.flag('aur', flag.boolean().default(false).describe('AUR preset: output to the paru/yay clone dir, platform linux'))
 	.flag('validate-only', flag.boolean().default(false).describe('Validate configuration and exit'))
-	.flag(
-		'init-config',
-		flag.boolean().default(false).describe('Write a starter config file (with $schema) and open it in your editor'),
-	)
 	.interactive(({ flags }) =>
 		// Prompt the personal-identity fields (what BMD's CRM keys a lead on) on a
 		// bare interactive run. Fields already supplied via CLI/env/config are
@@ -274,10 +281,10 @@ export const downloadCommand = command('dr-downloader')
 	)
 	.derive(({ flags, out }) => resolveConfig(flags, (message) => out.warn(message)))
 	.action(async ({ flags, ctx, out }) => {
-		// `--init-config` is a standalone action: write the starter config and
-		// open it, ignoring the rest of the resolution. Runs before validation so
-		// it works regardless of what the (placeholder) defaults look like.
-		if (flags['init-config']) {
+		// `--init` is a standalone action: write the starter config and open it,
+		// ignoring the rest of the resolution. Runs before validation so it works
+		// regardless of what the (placeholder) defaults look like.
+		if (flags.init) {
 			const { path, created } = await writeDefaultConfig(defaultConfigPath());
 			out.log(created ? `📝 Wrote starter config to ${path}` : `📝 Config already exists at ${path}`);
 			out.log('   Edit your details there; CLI flags and DAVINCI_* env vars still override it.');

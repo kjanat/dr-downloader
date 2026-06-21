@@ -23,6 +23,17 @@ This tool solves that by downloading the file first.
 
 ## Quick start
 
+**First time? Start with `--init`.** It writes a starter config file (pre-wired
+with a JSON [`$schema`](schema/config.schema.json) for editor autocompletion)
+and opens it in your `$EDITOR`, so you can fill in your registration details
+with context instead of being cold-prompted for them:
+
+```bash
+npx davinci-resolve-downloader --init   # alias: --init-config
+```
+
+Edit the file (name, email, country, …), save, then run a bare download:
+
 ```bash
 # run directly (no install)
 npx davinci-resolve-downloader
@@ -32,7 +43,19 @@ npm install -g davinci-resolve-downloader
 dr-downloader
 ```
 
+The package is `davinci-resolve-downloader`; the binary it installs is
+`dr-downloader`. `npx davinci-resolve-downloader` works because npx infers the
+bin, but if you'd rather be explicit:
+`npx --package davinci-resolve-downloader dr-downloader`.
+
 Downloads to `~/Downloads/` by default.
+
+> [!TIP]
+> A bare interactive run will prompt for **First name / Last name / Email
+> / Phone** if you haven't supplied them yet (via the config above, a flag, or a
+> `DAVINCI_*` env var) — that's the info BMD's registration form requires. Set
+> them once with `--init` and the prompts go away. See
+> [Registration details](#registration-details) and [Config file](#config-file).
 
 <details>
 <summary>Bun, pnpm, or Deno</summary>
@@ -53,8 +76,9 @@ Puppeteer at an existing browser via `PUPPETEER_EXECUTABLE_PATH` when using it.
 
 </details>
 
-> Installing pulls in Chrome via Puppeteer's `postinstall` hook — the first
-> install does a one-time browser download.
+> [!NOTE]
+> Installing pulls in Chrome via Puppeteer's `postinstall` hook — the
+> first install does a one-time browser download.
 
 ### Prerequisites
 
@@ -64,6 +88,7 @@ Puppeteer at an existing browser via `PUPPETEER_EXECUTABLE_PATH` when using it.
 ## Usage
 
 ```bash
+dr-downloader --init                       # set up a config file first (alias: --init-config)
 dr-downloader                              # download (defaults to ~/Downloads/)
 dr-downloader -o ./my-dir                  # custom output directory
 dr-downloader --platform mac               # linux | mac | windows | winarm (default: autodetect)
@@ -75,26 +100,26 @@ dr-downloader --help                       # show all options
 
 ### CLI flags
 
-| Flag                 | Description                                                                     |
-| -------------------- | ------------------------------------------------------------------------------- |
-| `-o, --output <dir>` | Download directory (default: `~/Downloads`)                                     |
-| `--aur`              | AUR preset: output to the paru/yay clone dir (paru preferred), platform `linux` |
-| `--platform <p>`     | `linux`, `mac`, `windows`, `winarm` (default: autodetect)                       |
-| `--region <code>`    | BMD support region, 2-letter (e.g. `gb`); default: geo                          |
-| `--firstname <name>` | First name                                                                      |
-| `--lastname <name>`  | Last name                                                                       |
-| `--email <email>`    | Email address                                                                   |
-| `--phone <phone>`    | Phone number                                                                    |
-| `--country <code>`   | Country code or full name (e.g. `US`)                                           |
-| `--state <state>`    | State/province (required for US/CA)                                             |
-| `--city <city>`      | City                                                                            |
-| `--street <addr>`    | Street address                                                                  |
-| `--zipcode <zip>`    | Postal code                                                                     |
-| `--company <name>`   | Company (optional)                                                              |
-| `--validate-only`    | Validate config and exit                                                        |
-| `-t, --test`         | Test mode: no actual download                                                   |
-| `--init-config`      | Write a starter config file (with `$schema`) and open it in `$EDITOR`           |
-| `--config <path>`    | Load config from an explicit path (overrides auto-discovery)                    |
+| Flag                 | Description                                                                                   |
+| -------------------- | --------------------------------------------------------------------------------------------- |
+| `--init`             | Write a starter config file (with `$schema`) and open it in `$EDITOR` (alias `--init-config`) |
+| `-o, --output <dir>` | Download directory (default: `~/Downloads`)                                                   |
+| `--aur`              | AUR preset: output to the paru/yay clone dir (paru preferred), platform `linux`               |
+| `--platform <p>`     | `linux`, `mac`, `windows`, `winarm` (default: autodetect)                                     |
+| `--region <code>`    | BMD support region, 2-letter (e.g. `gb`); default: geo                                        |
+| `--config <path>`    | Load config from an explicit path (overrides auto-discovery)                                  |
+| `--validate-only`    | Validate config and exit                                                                      |
+| `-t, --test`         | Test mode: no actual download                                                                 |
+| `--firstname <name>` | First name (BMD form)                                                                         |
+| `--lastname <name>`  | Last name (BMD form)                                                                          |
+| `--email <email>`    | Email address (BMD form)                                                                      |
+| `--phone <phone>`    | Phone number (BMD form)                                                                       |
+| `--country <code>`   | Country code or full name, e.g. `US` (BMD form)                                               |
+| `--state <state>`    | State/province, required for US/CA (BMD form)                                                 |
+| `--city <city>`      | City (BMD form)                                                                               |
+| `--street <addr>`    | Street address (BMD form)                                                                     |
+| `--zipcode <zip>`    | Postal code (BMD form)                                                                        |
+| `--company <name>`   | Company, optional (BMD form)                                                                  |
 
 ### Registration details
 
@@ -109,8 +134,7 @@ Prompts are skipped when there's nothing to interactively type into:
 
 - **non-interactive contexts** (CI, piped input, the chained AUR build) — falls
   back to the obviously-fake placeholder data (and warns you it did)
-- **`--aur`** (the unattended build path), **`--init-config`**,
-  **`--validate-only`**
+- **`--aur`** (the unattended build path), **`--init`**, **`--validate-only`**
 
 The address fields stay at their placeholder/config/flag value; only the
 identity fields are prompted.
@@ -153,9 +177,10 @@ Any flag can also be set in a JSON config file. It is discovered, in order, at:
     `%USERPROFILE%\AppData\Roaming\…`)
 - any path passed with `--config <path>`
 
+> [!IMPORTANT]
 > macOS uses `~/.config`, **not** `~/Library/Application Support`.
 
-The fastest way to create one is `dr-downloader --init-config`: it writes a
+The fastest way to create one is `dr-downloader --init`: it writes a
 fully-populated starter file to the per-user config path above (without
 clobbering an existing one) and opens it in your editor. The file is pre-wired
 with a [`$schema`](schema/config.schema.json) reference, so editors that
@@ -180,6 +205,11 @@ Every key is optional — a config is a partial override layer, so a file with
 just `{"region":"gb"}` is valid. Whether the _fully resolved_ registration has
 everything BMD requires (and the US/CA "state required" rule) is checked at run
 time, not against the file alone.
+
+A leading `~` in `output` (or in `DAVINCI_OUTPUT_DIR` / `DAVINCI_AUR_DIR`) is
+expanded to your home directory — `"output": "~/Downloads"` works. On the CLI
+your shell already expands `~`, but inside a config file or a quoted env var it
+wouldn't, so the tool does it itself.
 
 ## How it works
 
@@ -254,9 +284,10 @@ dr-downloader --aur
 paru -Bi ~/.cache/paru/clone/davinci-resolve
 ```
 
-> The installer BMD serves (latest stable) must match the PKGBUILD's `pkgver`,
-> or the filename/sha256 won't line up. Run `paru -G davinci-resolve` first so
-> the PKGBUILD is current.
+> [!WARNING]
+> The installer BMD serves (latest stable) must match the PKGBUILD's
+> `pkgver`, or the filename/sha256 won't line up. Run `paru -G davinci-resolve`
+> first so the PKGBUILD is current.
 
 ## Bot identity
 

@@ -21,7 +21,7 @@ export const CONFIG_SCHEMA_URL = `https://raw.githubusercontent.com/${REPO_SLUG}
  *
  * Routed through dreamcli's own resolver (the runtime adapter's `configDir`
  * plus {@link buildConfigSearchPaths}) rather than a hand-rolled XDG branch, so
- * `--init-config` writes the file exactly where discovery later probes for it —
+ * `--init` writes the file exactly where discovery later probes for it —
  * on every platform, not just Unix. Generating it here means it is picked up
  * with no `--config` flag.
  *
