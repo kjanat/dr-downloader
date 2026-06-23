@@ -5,8 +5,8 @@
     "": {
       "name": "davinci-resolve-downloader",
       "dependencies": {
-        "@kjanat/dreamcli": "^2.4.0",
-        "puppeteer": "^25.2.0",
+        "@kjanat/dreamcli": "^2.4",
+        "puppeteer": "^25",
       },
       "devDependencies": {
         "@biomejs/biome": "^2.5",
@@ -15,8 +15,6 @@
         "@typescript/native-preview": "^7.0.0-dev",
         "runner-run": "^0.14",
         "tsdown": "^0.22",
-      },
-      "peerDependencies": {
         "typescript": "^6",
       },
     },
