@@ -78,7 +78,10 @@ Puppeteer at an existing browser via `PUPPETEER_EXECUTABLE_PATH` when using it.
 
 > [!NOTE]
 > Installing pulls in Chrome via Puppeteer's `postinstall` hook — the
-> first install does a one-time browser download.
+> first install does a one-time browser download. Already have Chrome?
+> Set `PUPPETEER_SKIP_DOWNLOAD=1` before installing to skip it, then
+> point the tool at your browser with `PUPPETEER_EXECUTABLE_PATH` at run
+> time.
 
 ### Prerequisites
 

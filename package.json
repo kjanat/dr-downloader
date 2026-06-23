@@ -17,7 +17,6 @@
 		"dr-downloader": "run start",
 		"fake": "bun src/main.ts --test",
 		"format": "dprint fmt",
-		"postinstall": "puppeteer browsers install chrome",
 		"lint": "biome lint",
 		"lint:fix": "biome lint --write",
 		"prepack": "run build",
