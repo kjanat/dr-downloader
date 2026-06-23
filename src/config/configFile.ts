@@ -1,6 +1,6 @@
 import { DEFAULT_REGISTRATION, DEFAULT_RETRY_ATTEMPTS, DEFAULT_TIMEOUT_MS } from '#config/defaults';
 import { REPO_SLUG } from '#config/repository';
-import pkg from '#pkg' with { type: 'json' };
+import { name } from '#pkg' with { type: 'json' };
 import { buildConfigSearchPaths } from '@kjanat/dreamcli';
 import { createAdapter, type RuntimeAdapter } from '@kjanat/dreamcli/runtime';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -30,10 +30,10 @@ export const CONFIG_SCHEMA_URL = `https://raw.githubusercontent.com/${REPO_SLUG}
 export function defaultConfigPath(
 	adapter: Pick<RuntimeAdapter, 'cwd' | 'configDir'> = createAdapter(),
 ): string {
-	const searchPaths = buildConfigSearchPaths(pkg.name, adapter.cwd, adapter.configDir);
+	const searchPaths = buildConfigSearchPaths(name, adapter.cwd, adapter.configDir);
 	const globalPath = searchPaths.at(-1);
 	if (globalPath === undefined) {
-		throw new Error(`dreamcli returned no config search paths for ${pkg.name}`);
+		throw new Error(`dreamcli returned no config search paths for ${name}`);
 	}
 	return globalPath;
 }

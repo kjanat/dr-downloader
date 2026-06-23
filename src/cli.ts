@@ -12,7 +12,7 @@ import { normalizeRegion } from '#config/region';
 import type { DownloadConfig, Platform, RegistrationData } from '#config/types';
 import { PLATFORMS } from '#config/types';
 import { DaVinciDownloader } from '#downloader/DaVinciDownloader';
-import pkg from '#pkg' with { type: 'json' };
+import { description, name, version } from '#pkg' with { type: 'json' };
 import { openInEditor } from '#utils/editor';
 import { expandTilde } from '#utils/filesystem';
 import {
@@ -322,7 +322,7 @@ export const downloadCommand = command('dr-downloader')
 
 /** The dr-downloader CLI program (single default command). */
 export const app = cli('dr-downloader')
-	.version(pkg.version)
-	.description(pkg.description)
-	.config(pkg.name)
+	.version(version)
+	.description(description)
+	.config(name)
 	.default(downloadCommand);

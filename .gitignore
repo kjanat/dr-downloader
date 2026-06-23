@@ -39,3 +39,5 @@ downloads/
 
 .playwright-mcp
 logs
+
+/main.mjs

@@ -1,5 +1,5 @@
 import { REPO_URL } from '#config/repository';
-import pkg from '#pkg' with { type: 'json' };
+import { name, version } from '#pkg' with { type: 'json' };
 import { env as processEnv } from 'node:process';
 
 /**
@@ -12,7 +12,7 @@ import { env as processEnv } from 'node:process';
  * tool didn't hit them. Respect is the default; the user opts *out* of it, not
  * into it.
  */
-export const DEFAULT_USER_AGENT = `${pkg.name}/${pkg.version} (+${REPO_URL})`;
+export const DEFAULT_USER_AGENT = `${name}/${version} (+${REPO_URL})`;
 
 /**
  * Resolves the User-Agent for every outbound request (the Puppeteer page and
