@@ -1,6 +1,7 @@
 # DaVinci Resolve Downloader
 
 [![NPM](https://img.shields.io/npm/v/davinci-resolve-downloader?logo=npm&labelColor=CB3837&color=black)][npm]
+[![Scheduled download](https://github.com/kjanat/dr-downloader/actions/workflows/download.yml/badge.svg?event=schedule)](https://github.com/kjanat/dr-downloader/actions/workflows/download.yml)
 
 Automated downloader for [DaVinci Resolve] (free edition).\
 Uses Puppeteer to navigate BMD's AngularJS registration form, capture the CDN
@@ -356,5 +357,4 @@ When it does:
 [npm]: https://npm.im/davinci-resolve-downloader
 [open an issue]: https://github.com/kjanat/dr-downloader/issues
 
-<!-- markdownlint-disable-file MD033 -->
-<!-- rumdl-disable-file MD013 -->
+<!-- markdownlint-disable-file MD013 MD033 -->

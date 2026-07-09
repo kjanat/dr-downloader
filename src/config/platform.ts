@@ -16,7 +16,7 @@ export interface PlatformRuntime {
  * download.
  */
 export function autodetectPlatform(runtime: PlatformRuntime): Platform {
-	const envPlatform = runtime.env.DAVINCI_PLATFORM;
+	const envPlatform = runtime.env['DAVINCI_PLATFORM'];
 	if (envPlatform && isPlatform(envPlatform)) return envPlatform;
 
 	const arm = runtime.arch === 'arm64' || runtime.arch === 'arm';

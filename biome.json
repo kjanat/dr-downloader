@@ -12,6 +12,7 @@
 		"enabled": true,
 		"rules": {
 			"complexity": {
+				"useLiteralKeys": "off",
 				"noExcessiveCognitiveComplexity": "error"
 			}
 		},

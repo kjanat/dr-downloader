@@ -282,16 +282,16 @@ describe('ValidationService', () => {
 			expect(result.isValid).toBe(false);
 
 			// Check that multiple errors are collected
-			expect(result.errors.firstname).toBe('First Name is required');
-			expect(result.errors.lastname).toBe('Last Name is required');
-			expect(result.errors.email).toBe('Please enter a valid email address');
-			expect(result.errors.phone).toBe(
+			expect(result.errors['firstname']).toBe('First Name is required');
+			expect(result.errors['lastname']).toBe('Last Name is required');
+			expect(result.errors['email']).toBe('Please enter a valid email address');
+			expect(result.errors['phone']).toBe(
 				'Phone number can only contain numbers, spaces, parentheses, plus and minus signs',
 			);
-			expect(result.errors.country).toBe('Country is required');
-			expect(result.errors.city).toBe('City is required');
-			expect(result.errors.street).toBe('Street Address is required');
-			expect(result.errors.zipcode).toBe('Zipcode is required');
+			expect(result.errors['country']).toBe('Country is required');
+			expect(result.errors['city']).toBe('City is required');
+			expect(result.errors['street']).toBe('Street Address is required');
+			expect(result.errors['zipcode']).toBe('Zipcode is required');
 		});
 
 		it('should handle US state requirement correctly', () => {
@@ -308,7 +308,7 @@ describe('ValidationService', () => {
 
 			const result = validateRegistrationData(usDataNoState);
 			expect(result.isValid).toBe(false);
-			expect(result.errors.state).toBe('State/Province is required');
+			expect(result.errors['state']).toBe('State/Province is required');
 		});
 
 		it('should handle BMD form value format', () => {
@@ -343,8 +343,8 @@ describe('ValidationService', () => {
 
 			expect(result.isValid).toBe(false);
 			// Should treat null/undefined as empty and require them
-			expect(result.errors.firstname).toBe('First Name is required');
-			expect(result.errors.lastname).toBe('Last Name is required');
+			expect(result.errors['firstname']).toBe('First Name is required');
+			expect(result.errors['lastname']).toBe('Last Name is required');
 		});
 
 		it('should handle very long email addresses', () => {

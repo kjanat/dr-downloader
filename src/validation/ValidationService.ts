@@ -195,7 +195,7 @@ function validateOptionalFields(
 	if (data.email) {
 		const emailResult = validateEmail(data.email);
 		if (!emailResult.isValid && emailResult.error) {
-			errors.email = emailResult.error;
+			errors['email'] = emailResult.error;
 		}
 	}
 
@@ -203,7 +203,7 @@ function validateOptionalFields(
 	if (data.phone) {
 		const phoneResult = validatePhone(data.phone);
 		if (!phoneResult.isValid && phoneResult.error) {
-			errors.phone = phoneResult.error;
+			errors['phone'] = phoneResult.error;
 		}
 	}
 
@@ -211,7 +211,7 @@ function validateOptionalFields(
 	if (data.country) {
 		const countryResult = validateCountry(data.country);
 		if (!countryResult.isValid && countryResult.error) {
-			errors.country = countryResult.error;
+			errors['country'] = countryResult.error;
 		}
 	}
 
@@ -219,7 +219,7 @@ function validateOptionalFields(
 	if (data.zipcode) {
 		const zipcodeResult = validateZipcode(data.zipcode);
 		if (!zipcodeResult.isValid && zipcodeResult.error) {
-			errors.zipcode = zipcodeResult.error;
+			errors['zipcode'] = zipcodeResult.error;
 		}
 	}
 }
@@ -234,7 +234,7 @@ function validateContextDependentFields(
 	if (data.country) {
 		const stateResult = validateState(data.state ?? '', data.country);
 		if (!stateResult.isValid && stateResult.error) {
-			errors.state = stateResult.error;
+			errors['state'] = stateResult.error;
 		}
 	}
 }

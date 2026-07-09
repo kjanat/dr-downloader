@@ -22,10 +22,10 @@ describe('CONFIG_SCHEMA_URL', () => {
 describe('buildDefaultConfig', () => {
 	it('wires $schema and pre-fills the field defaults', () => {
 		const config = buildDefaultConfig();
-		expect(config.$schema).toBe(CONFIG_SCHEMA_URL);
-		expect(config.email).toBe(DEFAULT_REGISTRATION.email);
-		expect(config.timeout).toBeGreaterThan(0);
-		expect(config.retryAttempts).toBeGreaterThanOrEqual(0);
+		expect(config['$schema']).toBe(CONFIG_SCHEMA_URL);
+		expect(config['email']).toBe(DEFAULT_REGISTRATION.email);
+		expect(config['timeout']).toBeGreaterThan(0);
+		expect(config['retryAttempts']).toBeGreaterThanOrEqual(0);
 	});
 });
 

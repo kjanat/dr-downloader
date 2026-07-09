@@ -18,8 +18,8 @@
 
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
-		"noPropertyAccessFromIndexSignature": false,
+		"noPropertyAccessFromIndexSignature": true,
 
-		"types": ["bun"]
+		"types": ["*"]
 	}
 }

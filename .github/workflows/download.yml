@@ -1,7 +1,8 @@
 # yaml-language-server: $schema=https://www.schemastore.org/github-workflow.json
+# on dispatch, and weekly on Sunday at 00:00 UTC (midnight)
 ---
-name: Download davinci-resolve with Puppeteer
-on: { workflow_dispatch: {} }
+name: Download davinci-resolve
+on: { workflow_dispatch: {}, schedule: [{ cron: "0 0 * * 0" }] }
 
 concurrency: { group: "puppeteer-${{ github.ref_name }}", cancel-in-progress: true }
 permissions: { contents: read }
@@ -17,7 +18,7 @@ jobs:
         with: { node-version-file: .node-version }
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with: { bun-version: latest }
-      - uses: kjanat/runner@d489a5d3cd4f5283c11c4fa0b77765d0f02c394a # master
+      - uses: kjanat/runner@dfcd4bb629812889d3ec7d8d109a0c375b66ea64 # master
       - run: runner install --frozen dr-downloader
       - name: Upload artifact
         if: always()

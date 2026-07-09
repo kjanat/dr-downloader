@@ -18,7 +18,7 @@ export interface AurRuntime {
  */
 export function resolveAurOutputDir(runtime: AurRuntime): string {
 	const home = runtime.home ?? homedir();
-	const override = runtime.env.DAVINCI_AUR_DIR;
+	const override = runtime.env['DAVINCI_AUR_DIR'];
 	if (override) return expandTilde(override, home);
 
 	const exists = runtime.exists ?? existsSync;

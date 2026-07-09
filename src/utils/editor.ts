@@ -40,7 +40,7 @@ function tokenizeCommand(input: string): string[] {
  * with default app" command, which detaches.
  */
 export function resolveEditorCommand(rt: EditorRuntime): EditorCommand {
-	const configured = (rt.env.VISUAL ?? rt.env.EDITOR)?.trim();
+	const configured = (rt.env['VISUAL'] ?? rt.env['EDITOR'])?.trim();
 	if (configured) {
 		const [cmd, ...args] = tokenizeCommand(configured);
 		if (cmd) return { cmd, args, wait: true };

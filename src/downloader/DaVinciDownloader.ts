@@ -5,10 +5,13 @@ import { createBrowser, createPage } from '#utils/browser';
 import type { Out, SpinnerHandle } from '@kjanat/dreamcli';
 import { osc8, visibleWidth } from '@kjanat/dreamcli';
 import { exit, stdout } from 'node:process';
-import type { Page } from 'puppeteer';
+import type { HTTPRequest, HTTPResponse, Page } from 'puppeteer';
 
-/** The Blackmagic Design CDN host that serves the actual installer download. */
-const CDN_DOWNLOAD_HOST = 'swr.cloud.blackmagicdesign.com';
+/** Blackmagic Design CDN hosts that serve the actual installer download. */
+const CDN_DOWNLOAD_HOSTS: readonly string[] = [
+	'swr.cloud.blackmagicdesign.com',
+	'sw.blackmagicdesign.com',
+];
 
 /**
  * Whether `url` points at the BMD download CDN — matched on the parsed host
@@ -25,7 +28,28 @@ export function isCdnDownloadUrl(url: string): boolean {
 	} catch {
 		return false;
 	}
-	return host === CDN_DOWNLOAD_HOST || host.endsWith(`.${CDN_DOWNLOAD_HOST}`);
+	return CDN_DOWNLOAD_HOSTS.some((cdnHost) => host === cdnHost || host.endsWith(`.${cdnHost}`));
+}
+
+/** Extracts a signed BMD CDN URL from the current raw or JSON-ish API response body. */
+export function extractCdnDownloadUrl(text: string): string | null {
+	const normalized = text.trim().replaceAll('\\/', '/');
+	if (isCdnDownloadUrl(normalized)) return normalized;
+
+	const candidates = normalized.match(/https?:\/\/[^\s"'<>]+/g) ?? [];
+	return candidates.find(isCdnDownloadUrl) ?? null;
+}
+
+function isRegistrationDownloadResponse(url: string): boolean {
+	let parsed: URL;
+	try {
+		parsed = new URL(url);
+	} catch {
+		return false;
+	}
+
+	return parsed.hostname === 'www.blackmagicdesign.com'
+		&& /^\/api\/register\/[a-z]{2}\/download\/[^/]+$/.test(parsed.pathname);
 }
 
 export class DaVinciDownloader {
@@ -265,29 +289,51 @@ export class DaVinciDownloader {
 		// Enable request interception BEFORE registering handlers
 		await page.setRequestInterception(true);
 
-		// Single promise + single request handler to capture the CDN download URL
+		// Single promise + paired handlers to capture the CDN download URL.
+		// BMD currently returns the signed URL as the registration XHR body, then
+		// opens it as a document request; older flows exposed it only as a redirect.
 		const downloadUrlPromise = new Promise<string | null>((resolve) => {
-			const timeout = setTimeout(() => resolve(null), 60_000);
+			let settled = false;
+			const finish = (url: string | null): void => {
+				if (settled) return;
+				settled = true;
+				clearTimeout(timeout);
+				page.off('request', onRequest);
+				page.off('response', onResponse);
+				resolve(url);
+			};
 
-			page.on('request', (request) => {
+			const timeout = setTimeout(() => finish(null), 60_000);
+
+			const onRequest = (request: HTTPRequest): void => {
 				const url = request.url();
 				if (isCdnDownloadUrl(url)) {
-					clearTimeout(timeout);
 					request.abort().catch(() => {});
-					resolve(url);
+					finish(url);
 				} else {
 					request.continue().catch(() => {});
 				}
-			});
+			};
 
-			// Redundant safety: also capture from response in case abort races
-			page.on('response', (response) => {
+			const onResponse = (response: HTTPResponse): void => {
 				const url = response.url();
 				if (isCdnDownloadUrl(url)) {
-					clearTimeout(timeout);
-					resolve(url);
+					finish(url);
+					return;
 				}
-			});
+
+				if (isRegistrationDownloadResponse(url)) {
+					void response.text()
+						.then(extractCdnDownloadUrl)
+						.then((downloadUrl) => {
+							if (downloadUrl) finish(downloadUrl);
+						})
+						.catch(() => {});
+				}
+			};
+
+			page.on('request', onRequest);
+			page.on('response', onResponse);
 		});
 
 		// BMD uses <a ng-click="onFormSubmission()"> with a "disabled" class.

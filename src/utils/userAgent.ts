@@ -27,6 +27,6 @@ export const DEFAULT_USER_AGENT = `${name}/${version} (+${REPO_URL})`;
  * @param env - injected for testability; defaults to `process.env`.
  */
 export function resolveUserAgent(env: NodeJS.ProcessEnv = processEnv): string {
-	const override = env.DAVINCI_USER_AGENT?.trim();
+	const override = env['DAVINCI_USER_AGENT']?.trim();
 	return override ? override : DEFAULT_USER_AGENT;
 }
