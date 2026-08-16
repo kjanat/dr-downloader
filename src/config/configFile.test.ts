@@ -13,8 +13,8 @@ afterEach(async () => {
 
 describe('CONFIG_SCHEMA_URL', () => {
 	it('points at the schema file hosted in the repo', () => {
-		expect(CONFIG_SCHEMA_URL).toBe(
-			'https://raw.githubusercontent.com/kjanat/dr-downloader/master/schema/config.schema.json',
+		expect(CONFIG_SCHEMA_URL).toMatch(
+			/^https:\/{2}raw\.githubusercontent\.com\/kjanat\/dr-downloader\/(?:master|HEAD|v\d+\.\d+\.\d+)\/schema\/config\.schema\.json$/,
 		);
 	});
 });

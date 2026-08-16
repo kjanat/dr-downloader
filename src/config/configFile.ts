@@ -11,7 +11,7 @@ import { dirname } from 'node:path';
  * configs as `$schema` so editors offer validation and autocompletion. Built
  * from `package.json`'s `repository` so it tracks the actual repo.
  */
-export const CONFIG_SCHEMA_URL = `https://raw.githubusercontent.com/${REPO_SLUG}/master/schema/config.schema.json`;
+export const CONFIG_SCHEMA_URL = `https://raw.githubusercontent.com/${REPO_SLUG}/HEAD/schema/config.schema.json`;
 
 /**
  * The global config path dreamcli discovers for this app — the last of its
