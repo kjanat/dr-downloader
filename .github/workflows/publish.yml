@@ -6,17 +6,8 @@ on:
   release: { types: [published] }
   workflow_dispatch:
     inputs:
-      dry-run:
-        {
-          description: "Build and pack, but do not publish",
-          type: boolean,
-          default: true,
-        }
-      retag:
-        {
-          description: "Move 'latest' to this published version (e.g. 1.0.0-alpha.3); skips publish",
-          default: "",
-        }
+      dry-run: { description: "Build and pack, but do not publish", type: boolean, default: true }
+      retag: { description: "Move 'latest' to this published version (e.g. 1.0.0-alpha.3); skips publish", type: string, default: "" }
 
 concurrency: { group: "publish-${{ github.ref }}", cancel-in-progress: false }
 permissions: { contents: read }
