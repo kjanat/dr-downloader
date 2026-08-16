@@ -330,6 +330,7 @@ export const downloadCommand = command('dr-downloader')
 /** The dr-downloader CLI program (single default command). */
 export const app = cli('dr-downloader')
 	.manifest({ from: import.meta.url })
+	.links()
 	.config(name)
 	.help({ flagOrder: 'declaration' })
 	.default(downloadCommand)
