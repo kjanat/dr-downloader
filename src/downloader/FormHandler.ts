@@ -1,5 +1,6 @@
 import type { RegistrationData } from '#config/types';
 import { SELECTORS } from '#constants/selectors';
+import type { ValidationErrors } from '#validation/ValidationService';
 import {
 	validateCountry,
 	validateEmail,
@@ -8,13 +9,18 @@ import {
 	validateRequired,
 	validateState,
 	validateZipcode,
-	type ValidationErrors,
 } from '#validation/ValidationService';
-import { log, warn } from 'node:console';
 import type { Page } from 'puppeteer';
 
+export type FormNotice =
+	| { readonly kind: 'status'; readonly message: string }
+	| { readonly kind: 'warning'; readonly message: string };
+
 export class FormHandler {
-	constructor(private page: Page) {}
+	constructor(
+		private page: Page,
+		private reportNotice: (notice: FormNotice) => void,
+	) {}
 
 	async fillRegistrationForm(data: RegistrationData): Promise<void> {
 		// Validate data before attempting form submission
@@ -55,8 +61,7 @@ export class FormHandler {
 	validateField(
 		fieldName: string,
 		value: string,
-		// biome-ignore lint/suspicious/noExplicitAny: explanation
-		context?: any,
+		context?: { readonly country?: string },
 	): { isValid: boolean; error?: string } {
 		switch (fieldName) {
 			case 'email':
@@ -123,7 +128,10 @@ export class FormHandler {
 		);
 
 		if (!ok) {
-			warn(`Could not find input for "${labelText}" / ${idSelector}, continuing...`);
+			this.reportNotice({
+				kind: 'warning',
+				message: `Could not find input for "${labelText}" / ${idSelector}, continuing...`,
+			});
 		}
 	}
 
@@ -149,7 +157,10 @@ export class FormHandler {
 		try {
 			await this.waitForOptions(SELECTORS.state, 15_000);
 		} catch {
-			log('ℹ️ No state options loaded (may not be required for this country)');
+			this.reportNotice({
+				kind: 'status',
+				message: 'ℹ️ No state options loaded (may not be required for this country)',
+			});
 			return;
 		}
 
@@ -202,7 +213,10 @@ export class FormHandler {
 		);
 
 		if (!byText) {
-			warn(`Could not select ${selector} (${preferredValue} / ${fallbackText})`);
+			this.reportNotice({
+				kind: 'warning',
+				message: `Could not select ${selector} (${preferredValue} / ${fallbackText})`,
+			});
 		}
 	}
 
