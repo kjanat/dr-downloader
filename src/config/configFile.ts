@@ -1,8 +1,8 @@
 import { DEFAULT_REGISTRATION, DEFAULT_RETRY_ATTEMPTS, DEFAULT_TIMEOUT_MS } from '#config/defaults';
 import { REPO_SLUG } from '#config/repository';
 import { name } from '#pkg' with { type: 'json' };
-import { buildConfigSearchPaths } from '@kjanat/dreamcli';
-import { createAdapter, type RuntimeAdapter } from '@kjanat/dreamcli/runtime';
+import { buildConfigSearchPaths } from 'dreamcli';
+import { createAdapter, type RuntimeAdapter } from 'dreamcli/runtime';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
@@ -11,7 +11,7 @@ import { dirname } from 'node:path';
  * configs as `$schema` so editors offer validation and autocompletion. Built
  * from `package.json`'s `repository` so it tracks the actual repo.
  */
-export const CONFIG_SCHEMA_URL = `https://raw.githubusercontent.com/${REPO_SLUG}/master/schema/config.schema.json`;
+export const CONFIG_SCHEMA_URL = `https://raw.githubusercontent.com/${REPO_SLUG}/HEAD/schema/config.schema.json`;
 
 /**
  * The global config path dreamcli discovers for this app — the last of its
@@ -30,7 +30,10 @@ export const CONFIG_SCHEMA_URL = `https://raw.githubusercontent.com/${REPO_SLUG}
 export function defaultConfigPath(
 	adapter: Pick<RuntimeAdapter, 'cwd' | 'configDir'> = createAdapter(),
 ): string {
-	const searchPaths = buildConfigSearchPaths(name, adapter.cwd, adapter.configDir);
+	const searchPaths = buildConfigSearchPaths(name, {
+		baseDir: adapter.cwd,
+		userConfigDirs: [adapter.configDir],
+	});
 	const globalPath = searchPaths.at(-1);
 	if (globalPath === undefined) {
 		throw new Error(`dreamcli returned no config search paths for ${name}`);

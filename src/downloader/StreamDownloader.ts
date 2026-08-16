@@ -1,6 +1,6 @@
 import { formatFileSize } from '#utils/formatters';
 import { resolveUserAgent } from '#utils/userAgent';
-import type { Out } from '@kjanat/dreamcli';
+import type { Out } from 'dreamcli';
 import { createWriteStream } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
@@ -26,7 +26,7 @@ export async function download(url: string, outputDir: string, out: Out): Promis
 
 	const contentLength = Number(response.headers.get('content-length') || 0);
 	const sizeLabel = contentLength > 0 ? ` (${formatFileSize(contentLength)})` : '';
-	out.log(`📥 Downloading ${filename}${sizeLabel} to ${outputDir}/`);
+	out.status(`📥 Downloading ${filename}${sizeLabel} to ${outputDir}/`);
 
 	const body = response.body;
 	if (!body) throw new Error('No response body');

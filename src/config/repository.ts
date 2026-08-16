@@ -1,5 +1,5 @@
 import { repository } from '#pkg' with { type: 'json' };
-import { packageRepositoryUrl } from '@kjanat/dreamcli';
+import { packageRepositoryUrl } from 'dreamcli';
 
 /**
  * Canonical repo URL, derived from package.json `repository` via dreamcli so it
@@ -7,15 +7,10 @@ import { packageRepositoryUrl } from '@kjanat/dreamcli';
  * Interpolating `pkg.repository` directly is the bug this exists to prevent:
  * the object form stringifies to `[object Object]`.
  *
- * package.json always carries a `repository`, so the value is defined;
- * the guard only keeps the type honest.
+ * package.json always carries a `repository`; `require` enforces that invariant.
  */
 function resolveRepoUrl(): string {
-	const url = packageRepositoryUrl({ repository });
-	if (url === undefined) {
-		throw new Error('package.json is missing a usable `repository` field');
-	}
-	return url;
+	return packageRepositoryUrl({ repository }, { require: true });
 }
 
 /** `https://github.com/kjanat/dr-downloader`. */

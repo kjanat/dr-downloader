@@ -12,13 +12,13 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { persist-credentials: false }
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with: { node-version-file: .node-version }
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with: { bun-version: latest }
-      - uses: kjanat/runner@dfcd4bb629812889d3ec7d8d109a0c375b66ea64 # master
+        with: { bun-version: canary }
+      - uses: kjanat/runner@d166c6d1b70147ed7c4a2fdb0e4ed5ed8d2e4d39 # master
       - run: runner install --frozen dr-downloader
       - name: Upload artifact
         if: always()

@@ -1,4 +1,4 @@
-import { extractCdnDownloadUrl, isCdnDownloadUrl } from '#downloader/DaVinciDownloader';
+import { emitFormNotices, extractCdnDownloadUrl, isCdnDownloadUrl } from '#downloader/DaVinciDownloader';
 import { describe, expect, it } from 'bun:test';
 
 describe('isCdnDownloadUrl', () => {
@@ -42,5 +42,26 @@ describe('extractCdnDownloadUrl', () => {
 	it('rejects response text without a trusted CDN URL', () => {
 		expect(extractCdnDownloadUrl('https://evil.com/DaVinci_Resolve.zip')).toBeNull();
 		expect(extractCdnDownloadUrl('{"ok":true}')).toBeNull();
+	});
+});
+
+describe('emitFormNotices', () => {
+	it('preserves notice order and routes each kind through DreamCLI', () => {
+		const output: string[] = [];
+		emitFormNotices(
+			{
+				status: (message) => output.push(`status:${message}`),
+				warn: (message) => output.push(`warning:${message}`),
+			},
+			[
+				{ kind: 'status', message: 'No state options loaded' },
+				{ kind: 'warning', message: 'Could not select state' },
+			],
+		);
+
+		expect(output).toEqual([
+			'status:No state options loaded',
+			'warning:Could not select state',
+		]);
 	});
 });

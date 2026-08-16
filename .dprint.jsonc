@@ -1,5 +1,5 @@
 {
-	"extends": "https://github.com/kjanat/kjanat/raw/refs/heads/master/configs/dprint.remote.json",
+	"extends": "https://github.com/kjanat/kjanat/raw/85bf2eb4/configs/dprint.remote.json",
 	"jsonSchemaSort": { "associations": ["schema/*.schema.json"] },
 	"markdown": { "associations": ["!README.md"], "textWrap": "always", "lineWidth": 80 },
 	"prettier": { "associations": ["!**", "README.md"], "useTabs": false, "lineWidth": 80, "proseWrap": "preserve" },
