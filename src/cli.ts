@@ -12,7 +12,7 @@ import { normalizeRegion } from '#config/region';
 import type { DownloadConfig, Platform, RegistrationData } from '#config/types';
 import { PLATFORMS } from '#config/types';
 import { DaVinciDownloader } from '#downloader/DaVinciDownloader';
-import { description, name, version } from '#pkg' with { type: 'json' };
+import { name } from '#pkg' with { type: 'json' };
 import { openInEditor } from '#utils/editor';
 import { expandTilde } from '#utils/filesystem';
 import {
@@ -22,8 +22,8 @@ import {
 	validateRequired,
 	type ValidationErrors,
 } from '#validation/ValidationService';
-import type { Out } from '@kjanat/dreamcli';
-import { cli, CLIError, command, flag } from '@kjanat/dreamcli';
+import type { Out } from 'dreamcli';
+import { cli, CLIError, command, flag } from 'dreamcli';
 import { warn } from 'node:console';
 import { arch, env, platform as osPlatform } from 'node:process';
 
@@ -164,20 +164,20 @@ export function promptPhone(value: string): true | string {
 
 /**
  * The single download command. Flags resolve through dreamcli's
- * CLI -> env -> config -> prompt -> default chain. `.interactive()` asks for the
+ * CLI -> stdin -> env -> config -> prompt -> default chain. `.interactive()` asks for the
  * personal-identity fields on a bare interactive run; `.derive()` assembles the
  * domain config (so the action stays thin); `.action()` validates, optionally
  * reports (`--validate-only`), and otherwise runs the download.
  */
 export const downloadCommand = command('dr-downloader')
 	.description('Download the free edition of DaVinci Resolve from Blackmagic Design')
-	.example('dr-downloader --init', 'Set up a config file first (recommended on first run)')
-	.example('dr-downloader', 'Download the latest build to ~/Downloads')
-	.example('dr-downloader -o ./davinci-resolve', 'Download into a specific directory')
-	.example('dr-downloader --aur', 'Drop the zip into the paru/yay clone dir, then build')
+	.example(({ name }) => `${name} --init`, 'Set up a config file first (recommended on first run)')
+	.example(({ name }) => name, 'Download the latest build to ~/Downloads')
+	.example(({ name }) => `${name} -o ./davinci-resolve`, 'Download into a specific directory')
+	.example(({ name }) => `${name} --aur`, 'Drop the zip into the paru/yay clone dir, then build')
 	.flag(
 		'init',
-		flag.boolean().alias('init-config').default(false).describe(
+		flag.boolean().alias('init-config').describe(
 			'Write a starter config file (with $schema) and open it in your editor',
 		),
 	)
@@ -237,13 +237,17 @@ export const downloadCommand = command('dr-downloader')
 	)
 	.flag(
 		'output',
-		flag.string().alias('o').env('DAVINCI_OUTPUT_DIR').config('output').default(defaultOutputDir()).describe(
+		flag.path({ type: 'directory', mustExist: false }).alias('o').env('DAVINCI_OUTPUT_DIR').config('output').default(
+			defaultOutputDir(),
+		).describe(
 			'Download directory',
 		),
 	)
 	.flag(
 		'platform',
-		flag.enum(PLATFORMS).config('platform').describe(`${PLATFORMS.join(' | ')} (default: autodetect)`),
+		flag.enum(PLATFORMS).env('DAVINCI_PLATFORM').config('platform').describe(
+			`${PLATFORMS.join(' | ')} (default: autodetect)`,
+		),
 	)
 	.flag(
 		'region',
@@ -251,19 +255,22 @@ export const downloadCommand = command('dr-downloader')
 	)
 	.flag(
 		'timeout',
-		flag.number().env('DAVINCI_TIMEOUT_MS').config('timeout').default(DEFAULT_TIMEOUT_MS).describe(
-			'Download timeout in ms',
+		flag.duration().env('DAVINCI_TIMEOUT_MS').config('timeout').default(DEFAULT_TIMEOUT_MS).describe(
+			'Download timeout (e.g. 30s, 15m)',
 		),
 	)
 	.flag(
 		'retry-attempts',
-		flag.number().env('DAVINCI_RETRY_ATTEMPTS').config('retryAttempts').default(DEFAULT_RETRY_ATTEMPTS).describe(
-			'Download retry attempts',
-		),
+		flag
+			.number({ int: true, min: 0 })
+			.env('DAVINCI_RETRY_ATTEMPTS')
+			.config('retryAttempts')
+			.default(DEFAULT_RETRY_ATTEMPTS)
+			.describe('Download retry attempts'),
 	)
-	.flag('test', flag.boolean().alias('t').default(false).describe('Test mode: fill form, skip download'))
-	.flag('aur', flag.boolean().default(false).describe('AUR preset: output to the paru/yay clone dir, platform linux'))
-	.flag('validate-only', flag.boolean().default(false).describe('Validate configuration and exit'))
+	.flag('test', flag.boolean().alias('t').describe('Test mode: fill form, skip download'))
+	.flag('aur', flag.boolean().describe('AUR preset: output to the paru/yay clone dir, platform linux'))
+	.flag('validate-only', flag.boolean().describe('Validate configuration and exit'))
 	.interactive(({ flags }) =>
 		// Prompt the personal-identity fields (what BMD's CRM keys a lead on) on a
 		// bare interactive run. Fields already supplied via CLI/env/config are
@@ -286,8 +293,8 @@ export const downloadCommand = command('dr-downloader')
 		// regardless of what the (placeholder) defaults look like.
 		if (flags.init) {
 			const { path, created } = await writeDefaultConfig(defaultConfigPath());
-			out.log(created ? `📝 Wrote starter config to ${path}` : `📝 Config already exists at ${path}`);
-			out.log('   Edit your details there; CLI flags and DAVINCI_* env vars still override it.');
+			out.status(created ? `📝 Wrote starter config to ${path}` : `📝 Config already exists at ${path}`);
+			out.status('   Edit your details there; CLI flags and DAVINCI_* env vars still override it.');
 			await openInEditor(path);
 			return;
 		}
@@ -322,7 +329,8 @@ export const downloadCommand = command('dr-downloader')
 
 /** The dr-downloader CLI program (single default command). */
 export const app = cli('dr-downloader')
-	.version(version)
-	.description(description)
+	.manifest({ from: import.meta.url })
 	.config(name)
-	.default(downloadCommand);
+	.help({ flagOrder: 'declaration' })
+	.default(downloadCommand)
+	.completions({ as: 'flag' });

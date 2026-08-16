@@ -2,9 +2,9 @@ import type { DownloadConfig, Platform, RegistrationData } from '#config/types';
 import { FormHandler } from '#downloader/FormHandler';
 import { download } from '#downloader/StreamDownloader';
 import { createBrowser, createPage } from '#utils/browser';
-import type { Out, SpinnerHandle } from '@kjanat/dreamcli';
-import { osc8, visibleWidth } from '@kjanat/dreamcli';
-import { exit, stdout } from 'node:process';
+import type { Out, SpinnerHandle } from 'dreamcli';
+import { visibleWidth } from 'dreamcli';
+import { stdout } from 'node:process';
 import type { HTTPRequest, HTTPResponse, Page } from 'puppeteer';
 
 /** Blackmagic Design CDN hosts that serve the actual installer download. */
@@ -69,19 +69,14 @@ export class DaVinciDownloader {
 	) {}
 
 	async run(): Promise<void> {
-		this.out.log('🎬 DaVinci Resolve Downloader');
+		this.out.status('🎬 DaVinci Resolve Downloader');
 
 		if (this.downloadConfig.testMode) {
-			this.out.log('🧪 Running in test mode');
+			this.out.status('🧪 Running in test mode');
 		}
 
-		try {
-			await this.downloadDaVinciResolve();
-			this.out.log('🎉 Download completed successfully!');
-		} catch (e) {
-			this.out.error(`💥 Error: ${e instanceof Error ? e.message : String(e)}`);
-			exit(1);
-		}
+		await this.downloadDaVinciResolve();
+		this.out.status('🎉 Download completed successfully!');
 	}
 
 	private async downloadDaVinciResolve(): Promise<void> {
@@ -125,7 +120,7 @@ export class DaVinciDownloader {
 					throw new Error('Failed to capture download URL from CDN redirect');
 				}
 			} else {
-				this.out.log('🧪 Test mode: skipping form submission and download');
+				this.out.status('🧪 Test mode: skipping form submission and download');
 			}
 		} finally {
 			await browser.close();
@@ -277,10 +272,10 @@ export class DaVinciDownloader {
 	 */
 	private capturedUrlLine(url: string): string {
 		const prefix = '🔗 Captured download URL: ';
-		if (!stdout.isTTY) return `${prefix}${url}`;
+		if (!this.out.isHyperlinkSupported) return `${prefix}${url}`;
 		const room = (stdout.columns ?? 80) - visibleWidth(prefix);
 		const display = url.length > room ? `${url.slice(0, Math.max(1, room - 1))}…` : url;
-		return `${prefix}${osc8(url, display)}`;
+		return `${prefix}${this.out.color.link(url, display)}`;
 	}
 
 	private async submitAndCaptureDownloadUrl(
@@ -338,7 +333,7 @@ export class DaVinciDownloader {
 
 		// BMD uses <a ng-click="onFormSubmission()"> with a "disabled" class.
 		// Trigger Angular validation, remove disabled, then real-click.
-		this.out.log('🖱️ Clicking "Register & Download"...');
+		this.out.status('🖱️ Clicking "Register & Download"...');
 		await page.evaluate(() => {
 			for (const el of document.querySelectorAll('input, select, textarea')) {
 				el.dispatchEvent(new Event('input', { bubbles: true }));

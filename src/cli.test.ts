@@ -1,5 +1,5 @@
 import {
-	downloadCommand,
+	app,
 	type DownloadFlags,
 	promptEmail,
 	promptPhone,
@@ -7,30 +7,29 @@ import {
 	resolveConfig,
 	shouldSkipRegistrationPrompts,
 } from '#cli';
-import { runCommand } from '@kjanat/dreamcli/testkit';
 import { describe, expect, it } from 'bun:test';
 
 describe('dr-downloader command', () => {
 	it('validates the default config and exits 0', async () => {
-		const r = await runCommand(downloadCommand, ['--validate-only']);
+		const r = await app.execute(['--validate-only']);
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout.join('')).toContain('Configuration is valid');
 	});
 
 	it('lets a CLI flag override the default (space form)', async () => {
-		const r = await runCommand(downloadCommand, ['--validate-only', '--email', 'you@example.com']);
+		const r = await app.execute(['--validate-only', '--email', 'you@example.com']);
 		expect(r.exitCode).toBe(0);
 		expect(r.stdout.join('')).toContain('you@example.com');
 	});
 
 	it('rejects an invalid email with exit 1', async () => {
-		const r = await runCommand(downloadCommand, ['--validate-only', '--email', 'bad']);
+		const r = await app.execute(['--validate-only', '--email', 'bad']);
 		expect(r.exitCode).toBe(1);
 		expect(r.stderr.join('')).toContain('Configuration validation failed');
 	});
 
 	it('emits structured output in --json mode', async () => {
-		const r = await runCommand(downloadCommand, ['--validate-only'], { jsonMode: true });
+		const r = await app.execute(['--json', '--validate-only']);
 		expect(r.exitCode).toBe(0);
 		const payload: { valid?: boolean } = JSON.parse(r.stdout.join(''));
 		expect(payload.valid).toBe(true);
@@ -38,29 +37,47 @@ describe('dr-downloader command', () => {
 
 	it('accepts every supported platform', async () => {
 		for (const p of ['linux', 'mac', 'windows', 'winarm'] as const) {
-			const r = await runCommand(downloadCommand, ['--validate-only', '--platform', p]);
+			const r = await app.execute(['--validate-only', '--platform', p]);
 			expect(r.exitCode).toBe(0);
 			expect(r.stdout.join('')).toContain(`Platform: ${p}`);
 		}
 	});
 
+	it('resolves platform from the environment', async () => {
+		const r = await app.execute(['--validate-only'], {
+			env: { DAVINCI_PLATFORM: 'mac' },
+		});
+		expect(r.exitCode).toBe(0);
+		expect(r.stdout.join('')).toContain('Platform: mac');
+	});
+
+	it('accepts human-readable timeout durations', async () => {
+		const r = await app.execute(['--validate-only', '--timeout', '15m']);
+		expect(r.exitCode).toBe(0);
+	});
+
+	it('rejects negative retry counts', async () => {
+		const r = await app.execute(['--validate-only', '--retry-attempts', '-1']);
+		expect(r.exitCode).toBe(2);
+	});
+
 	it('rejects an unknown platform (enum) with non-zero exit', async () => {
-		const r = await runCommand(downloadCommand, ['--validate-only', '--platform', 'banana']);
+		const r = await app.execute(['--validate-only', '--platform', 'banana']);
 		expect(r.exitCode).not.toBe(0);
 	});
 
 	it('nudges (on stderr) when run with the default placeholder data', async () => {
-		const r = await runCommand(downloadCommand, ['--validate-only']);
+		const r = await app.execute(['--validate-only']);
 		expect(r.stderr.join('')).toContain('placeholder registration data');
 	});
 
 	it('suppresses the nudge once a real email is supplied', async () => {
-		const r = await runCommand(downloadCommand, ['--validate-only', '--email', 'you@example.com']);
+		const r = await app.execute(['--validate-only', '--email', 'you@example.com']);
 		expect(r.stderr.join('')).not.toContain('placeholder registration data');
 	});
 
 	it('omits the nudge from stdout in --json mode (machine consumers parse the email)', async () => {
-		const r = await runCommand(downloadCommand, ['--validate-only'], { jsonMode: true });
+		const r = await app.execute(['--json', '--validate-only']);
 		expect(r.stdout.join('')).not.toContain('placeholder registration data');
 		// The nudge is a stderr warn that's suppressed in jsonMode — confirm it's
 		// gone from both channels, not merely redirected off stdout.
@@ -70,7 +87,7 @@ describe('dr-downloader command', () => {
 	it('does not consume prompt answers in a suppressed mode (--validate-only)', async () => {
 		// Even with answers queued, validate-only suppresses prompts, so the
 		// placeholder defaults survive (answers are never read).
-		const r = await runCommand(downloadCommand, ['--validate-only'], {
+		const r = await app.execute(['--validate-only'], {
 			answers: ['Real', 'Person', 'real@person.com', '+1 555 0100'],
 		});
 		expect(r.exitCode).toBe(0);
