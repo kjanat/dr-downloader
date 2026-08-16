@@ -39,7 +39,7 @@
 	},
 	"dependencies": {
 		"ansispeck": "^0.4.1",
-		"dreamcli": "npm:@kjanat/dreamcli@next",
+		"dreamcli": "npm:@kjanat/dreamcli@^4.0.0-rc.1",
 		"puppeteer": "^25"
 	},
 	"devDependencies": {
