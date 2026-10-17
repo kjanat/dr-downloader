@@ -1,7 +1,7 @@
 import { DEFAULT_REGISTRATION, DEFAULT_RETRY_ATTEMPTS, DEFAULT_TIMEOUT_MS } from '#config/defaults';
 import { REPO_SLUG } from '#config/repository';
 import { name } from '#pkg' with { type: 'json' };
-import { buildConfigSearchPaths } from 'dreamcli';
+import { buildConfigSearchPaths } from 'dreamcli/config';
 import { createAdapter, type RuntimeAdapter } from 'dreamcli/runtime';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';

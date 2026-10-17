@@ -1,5 +1,5 @@
 import { repository } from '#pkg' with { type: 'json' };
-import { packageRepositoryUrl } from 'dreamcli';
+import { packageRepositoryUrl } from 'dreamcli/config';
 
 /**
  * Canonical repo URL, derived from package.json `repository` via dreamcli so it

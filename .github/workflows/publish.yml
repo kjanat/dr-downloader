@@ -41,7 +41,7 @@ jobs:
       - uses: kjanat/runner@d166c6d1b70147ed7c4a2fdb0e4ed5ed8d2e4d39 # master
       - name: Install deps (skip the Chrome postinstall)
         run: bun install --frozen-lockfile --ignore-scripts
-      - run: run -s typecheck lint test build
+      - run: run -s typecheck lint test build test:smoke
       - name: Verify package.json version matches the release tag
         if: github.event_name == 'release'
         run: |

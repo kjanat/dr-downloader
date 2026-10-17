@@ -1,6 +1,6 @@
 {
 	"name": "davinci-resolve-downloader",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"description": "Download the free edition of DaVinci Resolve from Blackmagic Design",
 	"keywords": [
 		"davinci resolve",
@@ -35,20 +35,21 @@
 		"lint:fix": "biome lint --write",
 		"prepack": "run build",
 		"start": "bun src/main.ts",
+		"test:smoke": "node main.mjs --help",
 		"typecheck": "run -q typescript-7 --noEmit"
 	},
 	"dependencies": {
-		"ansispeck": "^0.4.1",
-		"dreamcli": "npm:@kjanat/dreamcli@^4.0.0-rc.1",
-		"puppeteer": "^25"
+		"ansispeck": "^0.4.2",
+		"dreamcli": "npm:@kjanat/dreamcli@^4.1.0",
+		"puppeteer": "^25.14.0"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.8",
-		"@types/bun": "^1.3",
-		"@types/node": "^26.2.0",
-		"runner-run": "^0.25.1",
-		"tsdown": "^0.22",
-		"typescript": "npm:typescript@<7",
+		"@biomejs/biome": "^2.5.15",
+		"@types/bun": "^1.4.3",
+		"@types/node": "^26.6.5",
+		"runner-run": "^0.28.0",
+		"tsdown": "^0.23.1",
+		"typescript": "npm:typescript@^7.0.2",
 		"typescript-7": "npm:typescript@^7.0.2"
 	},
 	"packageManager": "bun@1.4.0",
